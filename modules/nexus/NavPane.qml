@@ -45,6 +45,19 @@ ColumnLayout {
         Layout.fillHeight: true
         Layout.topMargin: -topMargin
         Layout.bottomMargin: -bottomMargin
+        visible: !root.nState.searchOpen
         nState: root.nState
+    }
+
+    SearchResults {
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        Layout.topMargin: -topMargin
+        Layout.bottomMargin: -bottomMargin
+        visible: root.nState.searchOpen
+        nState: root.nState
+        query: searchField.text
+
+        onActivated: searchField.clear()
     }
 }
