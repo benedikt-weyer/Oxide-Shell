@@ -108,6 +108,33 @@ PageBase {
         }
 
         SectionHeader {
+            text: qsTr("Key tracker")
+        }
+
+        ToggleRow {
+            first: true
+            text: qsTr("Show key tracker overlay")
+            subtext: qsTr("Shows whether each listed key is currently pressed, as seen by the compositor - handy for finding a stuck key")
+            checked: root.cfg?.key_tracker.enabled ?? false
+            onToggled: IronlandCtl.setValue("key_tracker.enabled", checked ? "true" : "false")
+        }
+
+        SelectRow {
+            label: qsTr("Position")
+            menuItems: root.positionItems
+            active: root.positionItems[Math.max(0, root.positionValues.indexOf(root.cfg?.key_tracker.position ?? "top_left"))]
+            onSelected: item => IronlandCtl.setValue("key_tracker.position", root.positionValues[root.positionItems.indexOf(item)])
+        }
+
+        TextFieldRow {
+            last: true
+            label: qsTr("Tracked keys")
+            subtext: qsTr("Comma-separated xkb key names, e.g. Control_L, Control_R, Shift_L, Super_L")
+            value: (root.cfg?.key_tracker.keys ?? ["Control_L", "Control_R"]).join(", ")
+            onEditingFinished: v => IronlandCtl.setValue("key_tracker.keys", v || "Control_L,Control_R")
+        }
+
+        SectionHeader {
             text: qsTr("Frame timing capture")
         }
 
