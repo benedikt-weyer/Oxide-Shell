@@ -30,10 +30,16 @@ PageBase {
         }
 
         ToggleRow {
-            last: true
             text: qsTr("Show icon")
             checked: Config.bar.clock.showIcon
             onToggled: GlobalConfig.bar.clock.showIcon = checked
+        }
+
+        ToggleRow {
+            last: true
+            text: qsTr("Show calendar on hover")
+            checked: Config.bar.popouts.clock
+            onToggled: GlobalConfig.bar.popouts.clock = checked
         }
     }
 }

@@ -133,6 +133,7 @@ Item {
         id: popoutsWrapper
 
         screen: root.screen
+        screenState: root.screenState
         borderThickness: root.borderThickness
     }
 

@@ -420,7 +420,8 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "popouts": {
             "activeWindow": true,
             "tray": true,
-            "statusIcons": true
+            "statusIcons": true,
+            "clock": true
         },
         "workspaces": {
             "shown": 5,

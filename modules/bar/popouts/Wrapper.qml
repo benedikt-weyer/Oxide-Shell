@@ -14,6 +14,7 @@ Item {
     id: root
 
     required property ShellScreen screen
+    required property ScreenState screenState
     required property real offsetScale
 
     readonly property alias content: content
@@ -112,6 +113,7 @@ Item {
 
         sourceComponent: Content {
             popouts: popoutState
+            screenState: root.screenState
         }
     }
 
