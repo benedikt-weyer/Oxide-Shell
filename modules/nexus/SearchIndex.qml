@@ -207,6 +207,7 @@ QtObject {
         {label: qsTr("Windows on special workspaces"), sub: "", path: "Panels › Workspaces", page: 8, stack: [2, 6]},
         {label: qsTr("Max window icons"), sub: "", path: "Panels › Workspaces", page: 8, stack: [2, 6]},
         {label: qsTr("Per-monitor workspaces"), sub: qsTr("Show each monitor's workspaces independently"), path: "Panels › Workspaces", page: 8, stack: [2, 6]},
+        {label: qsTr("Enabled"), sub: qsTr("Show the active window in the taskbar"), path: "Panels › Active window", page: 8, stack: [2, 7]},
         {label: qsTr("Compact"), sub: "", path: "Panels › Active window", page: 8, stack: [2, 7]},
         {label: qsTr("Inverted"), sub: "", path: "Panels › Active window", page: 8, stack: [2, 7]},
         {label: qsTr("Show on hover"), sub: qsTr("Only show the active window title while hovering"), path: "Panels › Active window", page: 8, stack: [2, 7]},

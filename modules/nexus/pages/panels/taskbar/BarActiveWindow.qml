@@ -7,6 +7,8 @@ import qs.modules.nexus.common
 PageBase {
     id: root
 
+    readonly property int entryIndex: Config.bar.entries.values.findIndex(e => e.id === "activeWindow")
+
     title: qsTr("Active window")
     isSubPage: true
 
@@ -18,6 +20,21 @@ PageBase {
 
         ToggleRow {
             first: true
+            text: qsTr("Enabled")
+            subtext: qsTr("Show the active window in the taskbar")
+            checked: root.entryIndex >= 0 && Config.bar.entries.values[root.entryIndex].enabled
+            onToggled: {
+                if (root.entryIndex >= 0)
+                    GlobalConfig.bar.entries.at(root.entryIndex).enabled = checked;
+                else if (checked)
+                    GlobalConfig.bar.entries.insert({
+                        id: "activeWindow",
+                        enabled: true
+                    });
+            }
+        }
+
+        ToggleRow {
             text: qsTr("Compact")
             checked: Config.bar.activeWindow.compact
             onToggled: GlobalConfig.bar.activeWindow.compact = checked
