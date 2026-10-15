@@ -110,7 +110,7 @@ Third-party/first-party plugins are separate processes speaking gRPC over a unix
 
 ## Conventions
 
-- Commit messages: `module: change` (lowercase subject, no leading capital — enforced by `check-pr-title.yml`). See allowed scopes in `.github/workflows/check-pr-title.yml` (shell modules like `bar`, `dashboard`, `launcher`, ... and plugin areas like `core`, `config`, `services`, `settings`, `wayland`/`plugins`, ...). Squash multiple changes into one commit when related; put the most impactful change in the subject and the rest in the body.
+- Commit messages: `module: change` (lowercase subject, no leading capital; no longer enforced by CI). Scopes are shell modules like `bar`, `dashboard`, `launcher`, ... and plugin areas like `core`, `config`, `services`, `settings`, `wayland`/`plugins`, ... Squash multiple changes into one commit when related; put the most impactful change in the subject and the rest in the body.
 - QML property/signal/function ordering within an object follows the [Qt QML coding conventions](https://doc.qt.io/qt-6/qml-codingconventions.html) — enforced by `scripts/qml-lint-conventions.py`: id, then properties, then signals, then JS functions, then property bindings, then child objects, then component definitions, with blank lines between sections.
 - No trailing whitespace; single space around operators (formatting is otherwise whatever `qmlformat`/`clang-format` produce — just run them).
 - See `.github/CONTRIBUTING.md` for the full (short) contribution rules, including: PRs must be tested before submitting, and descriptions must explain what changed and how to use it.
