@@ -21,8 +21,15 @@ Scope {
     // pointer was when it fired, falling back to the focused screen if the
     // compositor couldn't tell us (or that output is no longer connected).
     function launcherScreen(): ScreenState {
-        const screen = Quickshell.screens.find(s => s.name === root.launcherOutputName);
+        const screen = root.launcherShellScreen();
         return (screen && ShellState.forScreen(screen)) ?? ShellState.forActive();
+    }
+
+    // The ShellScreen launcherScreen() resolves to, so the fullscreen check
+    // below looks at the output the launcher would open on rather than the
+    // focused one (a fullscreen window on another monitor must not block it).
+    function launcherShellScreen(): ShellScreen {
+        return Quickshell.screens.find(s => s.name === root.launcherOutputName) ?? Hypr.focusedMonitor;
     }
 
     // qmllint disable unresolved-type
@@ -82,7 +89,7 @@ Scope {
             root.launcherOutputName = output;
         }
         onReleased: {
-            if (!root.launcherInterrupted && !root.hasFullscreen) {
+            if (!root.launcherInterrupted && !Hypr.hasFullscreenOn(root.launcherShellScreen())) {
                 const screenState = root.launcherScreen();
                 screenState.launcher = !screenState.launcher;
             }
