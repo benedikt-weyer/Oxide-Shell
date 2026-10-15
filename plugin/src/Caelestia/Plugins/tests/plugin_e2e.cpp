@@ -84,13 +84,18 @@ private slots:
 
         PluginManager m;
 
-        // The first-party source is there by default and lists pomodoro.
+        // The first-party source is there by default and lists the bundled plugins.
         QVERIFY(waitFor([&] {
             return !m.available().isEmpty();
         }));
         QCOMPARE(m.sources().size(), 1);
         QVERIFY(m.sources().at(0).toMap().value(u"builtin"_s).toBool());
-        const QVariantMap avail = m.available().at(0).toMap();
+        QVariantMap avail;
+        for (const QVariant& entry : m.available()) {
+            if (entry.toMap().value(u"id"_s).toString() == u"pomodoro"_s) {
+                avail = entry.toMap();
+            }
+        }
         QCOMPARE(avail.value(u"id"_s).toString(), u"pomodoro"_s);
         QVERIFY(!avail.value(u"installed"_s).toBool());
         QVERIFY(avail.value(u"compatible"_s).toBool());

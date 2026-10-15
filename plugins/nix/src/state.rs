@@ -134,7 +134,12 @@ impl State {
 mod tests {
     use super::*;
 
-    fn event(phase: pb::EventPhase, message: &str, is_error: bool, fraction: f64) -> pb::ProgressEvent {
+    fn event(
+        phase: pb::EventPhase,
+        message: &str,
+        is_error: bool,
+        fraction: f64,
+    ) -> pb::ProgressEvent {
         pb::ProgressEvent {
             phase: phase as i32,
             message: message.into(),

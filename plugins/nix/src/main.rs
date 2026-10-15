@@ -36,7 +36,10 @@ impl Shared {
     }
 
     fn target(&self) -> Target {
-        self.target.lock().unwrap_or_else(|e| e.into_inner()).clone()
+        self.target
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     fn changed(&self) {
@@ -271,7 +274,10 @@ mod tests {
             Err(Status::unavailable("no network"))
         }
 
-        async fn rebuild(&self, request: Request<pb::RebuildRequest>) -> Result<Response<Events>, Status> {
+        async fn rebuild(
+            &self,
+            request: Request<pb::RebuildRequest>,
+        ) -> Result<Response<Events>, Status> {
             assert_eq!(
                 request.into_inner().target.unwrap().host_name,
                 "box",
@@ -306,7 +312,8 @@ mod tests {
 
     #[tokio::test]
     async fn operations_run_against_the_daemon() {
-        let socket = std::env::temp_dir().join(format!("nix-plugin-test-{}.sock", std::process::id()));
+        let socket =
+            std::env::temp_dir().join(format!("nix-plugin-test-{}.sock", std::process::id()));
         let _ = std::fs::remove_file(&socket);
         let listener = tokio::net::UnixListener::bind(&socket).unwrap();
         std::env::set_var("NIX_BACKEND_SOCKET", &socket);
@@ -323,7 +330,12 @@ mod tests {
         };
 
         shared.state().begin();
-        run_op(shared.clone(), Op::Rebuild(pb::RebuildMode::Switch), shared.target()).await;
+        run_op(
+            shared.clone(),
+            Op::Rebuild(pb::RebuildMode::Switch),
+            shared.target(),
+        )
+        .await;
         {
             let s = shared.state();
             assert!(!s.running && !s.failed());

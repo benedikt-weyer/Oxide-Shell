@@ -109,7 +109,11 @@ fn status(s: &State) -> Container {
     if failed {
         line = line.child(
             ui::button("")
-                .icon(if s.copied { "inventory" } else { "content_copy" })
+                .icon(if s.copied {
+                    "inventory"
+                } else {
+                    "content_copy"
+                })
                 .action("copy_error")
                 .style(ButtonStyle::Text),
         );
@@ -133,8 +137,7 @@ fn status(s: &State) -> Container {
 }
 
 fn has_activity(s: &State) -> bool {
-    s.running
-        && (!s.items.is_empty() || s.stats.builds_expected > 0 || s.stats.copies_expected > 0)
+    s.running && (!s.items.is_empty() || s.stats.builds_expected > 0 || s.stats.copies_expected > 0)
 }
 
 fn item_row(item: &pb::BuildItem) -> Container {

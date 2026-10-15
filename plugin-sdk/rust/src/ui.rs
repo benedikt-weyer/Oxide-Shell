@@ -13,7 +13,9 @@
 //! ```
 
 use crate::proto;
-pub use crate::proto::{Align, ButtonStyle, Elide, ProgressShape, Surface, TextStyle, Tone, Urgency};
+pub use crate::proto::{
+    Align, ButtonStyle, Elide, ProgressShape, Surface, TextStyle, Tone, Urgency,
+};
 
 /// A widget. Convert the typed builders with `.into()`.
 #[derive(Clone, Debug)]
