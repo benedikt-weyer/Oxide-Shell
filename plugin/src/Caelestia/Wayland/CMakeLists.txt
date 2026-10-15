@@ -6,6 +6,7 @@ qml_module(caelestia-wayland
         ironlandfocusgrab.cpp
         ironlandframecapture.cpp
         ironlandclipboardhistory.cpp
+        ironlanddisplayfilter.cpp
     LIBRARIES
         Qt::Gui
         Qt::GuiPrivate
@@ -20,4 +21,5 @@ caelestia_add_wayland_protocol(caelestia-wayland
         "${CMAKE_SOURCE_DIR}/plugin/protocols/ironland-focus-grab-v1.xml"
         "${CMAKE_SOURCE_DIR}/plugin/protocols/ironland-frame-capture-v1.xml"
         "${CMAKE_SOURCE_DIR}/plugin/protocols/ironland-clipboard-history-v1.xml"
+        "${CMAKE_SOURCE_DIR}/plugin/protocols/ironland-display-filter-v1.xml"
 )

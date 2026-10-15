@@ -50,6 +50,9 @@ QtObject {
                 Component {
                     OutputDetailPage {}
                 }
+                Component {
+                    NightModePage {}
+                }
             }
         },
         Component {

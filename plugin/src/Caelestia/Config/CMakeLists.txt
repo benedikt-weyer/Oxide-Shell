@@ -20,6 +20,7 @@ qml_module(caelestia-config
         launcherconfig.hpp
         lockconfig.hpp
         nexusconfig.hpp
+        nightmodeconfig.hpp
         nixbackendconfig.hpp
         notifsconfig.hpp
         osdconfig.hpp

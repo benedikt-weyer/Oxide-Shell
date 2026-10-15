@@ -189,6 +189,19 @@ PageBase {
         }
 
         SectionHeader {
+            text: qsTr("Colour")
+        }
+
+        NavRow {
+            first: true
+            last: true
+            icon: "nightlight"
+            text: qsTr("Night mode")
+            subtext: NightMode.active ? qsTr("On") : (GlobalConfig.nightMode.scheduled ? qsTr("Scheduled, %1 to %2").arg(GlobalConfig.nightMode.startTime).arg(GlobalConfig.nightMode.endTime) : qsTr("Off"))
+            onClicked: root.nState.openSubPage(2)
+        }
+
+        SectionHeader {
             text: qsTr("Add manually")
         }
 

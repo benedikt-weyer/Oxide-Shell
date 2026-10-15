@@ -16,6 +16,7 @@
 #include "launcherconfig.hpp"
 #include "lockconfig.hpp"
 #include "nexusconfig.hpp"
+#include "nightmodeconfig.hpp"
 #include "nixbackendconfig.hpp"
 #include "notifsconfig.hpp"
 #include "osdconfig.hpp"
@@ -43,6 +44,7 @@ class ConfigRoot : public settings::RootNode {
     CONFIG_SUBOBJECT(LauncherConfig, launcher)
     CONFIG_SUBOBJECT(LockConfig, lock)
     CONFIG_SUBOBJECT(NexusConfig, nexus)
+    CONFIG_SUBOBJECT(NightModeConfig, nightMode)
     CONFIG_SUBOBJECT(NixBackendConfig, nixBackend)
     CONFIG_SUBOBJECT(NotifsConfig, notifs)
     CONFIG_SUBOBJECT(OsdConfig, osd)
