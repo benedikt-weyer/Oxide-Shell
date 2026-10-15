@@ -20,6 +20,8 @@ class Gpu : public TickingService {
     Q_PROPERTY(QString name READ name NOTIFY nameChanged)
     Q_PROPERTY(qreal percentage READ percentage NOTIFY percentageChanged)
     Q_PROPERTY(qreal temperature READ temperature NOTIFY temperatureChanged)
+    Q_PROPERTY(qreal frequency READ frequency NOTIFY frequencyChanged)
+    Q_PROPERTY(qreal maxFrequency READ maxFrequency NOTIFY maxFrequencyChanged)
 
 public:
     explicit Gpu(QObject* parent = nullptr);
@@ -28,12 +30,16 @@ public:
     [[nodiscard]] QString name() const;
     [[nodiscard]] qreal percentage() const;
     [[nodiscard]] qreal temperature() const;
+    [[nodiscard]] qreal frequency() const; // MHz, 0 when unavailable
+    [[nodiscard]] qreal maxFrequency() const;
 
 signals:
     void typeChanged();
     void nameChanged();
     void percentageChanged();
     void temperatureChanged();
+    void frequencyChanged();
+    void maxFrequencyChanged();
 
 protected:
     void tick() override;
@@ -52,6 +58,8 @@ private:
     void readGenericUsage();
     void startNvidiaUsage();
     void readGpuTemperature();
+    void readGenericFrequency();
+    void setFrequency(qreal current, qreal max);
     void resetUsage();
 
     // Runs a one-shot process, delivering its stdout to callback exactly once (empty
@@ -68,6 +76,8 @@ private:
     QString m_name;
     qreal m_percentage = 0.0;
     qreal m_temperature = 0.0;
+    qreal m_frequency = 0.0;
+    qreal m_maxFrequency = 0.0;
 
     // /sys/class/drm card busy files, enumerated once at construction (the card
     // set is static at runtime) and reused by resolution and the tick path.

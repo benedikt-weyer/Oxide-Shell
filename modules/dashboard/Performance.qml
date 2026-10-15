@@ -10,6 +10,8 @@ import qs.services
 Item {
     id: root
 
+    property bool cpuExpanded
+
     implicitWidth: placeholder.active ? Tokens.sizes.dashboard.perfPlaceholderWidth : content.implicitWidth
     implicitHeight: placeholder.active ? placeholder.implicitHeight + Tokens.padding.extraLarge * 2 : content.implicitHeight
 
@@ -77,6 +79,9 @@ Item {
                         usage: Cpu.percentage
                         temperature: Cpu.temperature
                         accent: Colours.palette.m3primary
+                        expandable: Cpu.cores.rowCount() > 0
+                        expanded: root.cpuExpanded
+                        onToggled: root.cpuExpanded = !root.cpuExpanded
 
                         ServiceRef {
                             service: Cpu
@@ -95,12 +100,24 @@ Item {
                         subLabel: Gpu.name
                         usage: Gpu.percentage
                         temperature: Gpu.temperature
+                        frequency: Gpu.frequency
+                        maxFrequency: Gpu.maxFrequency
                         accent: Colours.palette.m3secondary
 
                         ServiceRef {
                             service: Gpu
                         }
                     }
+                }
+            }
+
+            Loader {
+                Layout.fillWidth: true
+                active: root.cpuExpanded && cpuCard.active
+                visible: active
+
+                sourceComponent: CpuCoresPanel {
+                    accent: Colours.palette.m3primary
                 }
             }
 

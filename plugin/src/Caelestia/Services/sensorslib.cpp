@@ -157,6 +157,28 @@ std::optional<double> cpuPackageTemp() {
     return primary.has_value() ? primary : fallback;
 }
 
+QHash<int, double> cpuCoreTemps() {
+    ensureInit();
+    QHash<int, double> temps;
+    if (!g_initOk.load(std::memory_order_acquire))
+        return temps;
+
+    forEachTempFeature(
+        SENSORS_BUS_TYPE_ANY, [&](const sensors_chip_name* chip, const sensors_feature* feat, const QByteArray& label) {
+            if (!chip->prefix || std::strcmp(chip->prefix, "coretemp") != 0 || !labelStartsWith(label, "Core "))
+                return;
+
+            bool ok = false;
+            const int id = label.mid(5).toInt(&ok);
+            if (!ok)
+                return;
+            if (auto v = readTempInput(chip, feat))
+                temps.insert(id, *v);
+        });
+
+    return temps;
+}
+
 std::optional<double> gpuPciAverageTemp() {
     ensureInit();
     if (!g_initOk.load(std::memory_order_acquire))

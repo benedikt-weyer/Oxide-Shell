@@ -15,12 +15,43 @@ StyledRect {
     required property color accent
     required property real usage
     required property real temperature
+    property real frequency // MHz, 0 when unavailable
+    property real maxFrequency
+    property bool expandable
+    property bool expanded
+
+    signal toggled
+
+    function formatGhz(mhz: real): string {
+        return (mhz / 1000).toFixed(2);
+    }
 
     color: Colours.tPalette.m3surfaceContainer
     radius: Tokens.rounding.extraLarge
 
     implicitWidth: Tokens.sizes.dashboard.perfHeroCardWidth
     implicitHeight: Math.max(tempProg.implicitHeight + detailsRow.implicitHeight + Tokens.spacing.large, usageShape.implicitHeight + usageLabel.implicitHeight) + Tokens.padding.large * 2
+
+    StateLayer {
+        disabled: !root.expandable
+        showHoverBackground: root.expandable
+        onClicked: root.toggled()
+    }
+
+    MaterialIcon {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.margins: Tokens.padding.medium
+
+        visible: root.expandable
+        text: "expand_more"
+        color: Colours.palette.m3onSurfaceVariant
+        rotation: root.expanded ? 180 : 0
+
+        Behavior on rotation {
+            Anim {}
+        }
+    }
 
     CircularProgress {
         id: tempProg
@@ -79,6 +110,33 @@ StyledRect {
         anchors.bottom: parent.bottom
         anchors.margins: Tokens.padding.largeIncreased
         spacing: Tokens.spacing.extraSmall
+
+        RowLayout {
+            Layout.leftMargin: -Tokens.padding.extraSmall
+            spacing: Tokens.spacing.extraSmall
+            visible: root.frequency > 0 || root.maxFrequency > 0
+
+            MaterialIcon {
+                Layout.topMargin: Math.round(fontInfo.pointSize * 0.08)
+                text: "speed"
+                color: root.accent
+                fontStyle: Tokens.font.icon.medium
+                fill: 1
+            }
+
+            StyledText {
+                Layout.preferredWidth: freqMetrics.width
+                text: root.maxFrequency > 0 ? qsTr("%1 / %2 GHz").arg(root.formatGhz(root.frequency)).arg(root.formatGhz(root.maxFrequency)) : qsTr("%1 GHz").arg(root.formatGhz(root.frequency))
+                font: Tokens.font.body.builders.medium.build()
+            }
+
+            TextMetrics {
+                id: freqMetrics
+
+                text: qsTr("%1 / %2 GHz").arg("8.88").arg("8.88")
+                font: Tokens.font.body.builders.medium.build()
+            }
+        }
 
         RowLayout {
             Layout.leftMargin: -Tokens.padding.extraSmall

@@ -3,7 +3,11 @@
 #include <qdir.h>
 #include <qdiriterator.h>
 #include <qfile.h>
+#include <qfileinfo.h>
 #include <qregularexpression.h>
+
+#include <algorithm>
+#include <cmath>
 
 #include "config/rootnodes.hpp"
 #include "config/serviceconfig.hpp"
@@ -171,6 +175,14 @@ qreal Gpu::temperature() const {
     return m_temperature;
 }
 
+qreal Gpu::frequency() const {
+    return m_frequency;
+}
+
+qreal Gpu::maxFrequency() const {
+    return m_maxFrequency;
+}
+
 void Gpu::setType(GpuType value) {
     if (value == m_type) {
         return;
@@ -194,6 +206,7 @@ void Gpu::tick() {
     if (m_type == GpuType::Generic) {
         readGenericUsage();
         readGpuTemperature();
+        readGenericFrequency();
     } else if (m_type == GpuType::Nvidia) {
         startNvidiaUsage();
     } else {
@@ -336,7 +349,8 @@ void Gpu::startNvidiaUsage() {
     m_nvidiaQuerying = true;
     const int generation = m_generation;
     runProcess(u"nvidia-smi"_s,
-        { u"--query-gpu=utilization.gpu,temperature.gpu"_s, u"--format=csv,noheader,nounits"_s },
+        { u"--query-gpu=utilization.gpu,temperature.gpu,clocks.gr,clocks.max.gr"_s,
+            u"--format=csv,noheader,nounits"_s },
         [this, generation](const QByteArray& out) {
             m_nvidiaQuerying = false;
 
@@ -361,6 +375,15 @@ void Gpu::startNvidiaUsage() {
                 m_temperature = temp;
                 emit temperatureChanged();
             }
+
+            // Clocks are absent (or "[N/A]") on some boards, which leaves them at 0
+            if (parts.size() >= 4) {
+                bool ok3 = false;
+                bool ok4 = false;
+                const qreal cur = parts.at(2).trimmed().toDouble(&ok3);
+                const qreal max = parts.at(3).trimmed().toDouble(&ok4);
+                setFrequency(ok3 ? cur : 0.0, ok4 ? max : 0.0);
+            }
         });
 }
 
@@ -373,7 +396,60 @@ void Gpu::readGpuTemperature() {
     }
 }
 
+void Gpu::setFrequency(qreal current, qreal max) {
+    if (std::abs(current - m_frequency) > 0.5) {
+        m_frequency = current;
+        emit frequencyChanged();
+    }
+    if (std::abs(max - m_maxFrequency) > 0.5) {
+        m_maxFrequency = max;
+        emit maxFrequencyChanged();
+    }
+}
+
+void Gpu::readGenericFrequency() {
+    // amdgpu exposes the sclk DPM table ("1: 1200Mhz *", current state starred), i915 gt_*_mhz files
+    static const QRegularExpression k_dpmRe(
+        u"^\\d+:\\s*(\\d+)\\s*Mhz(\\s*\\*)?"_s, QRegularExpression::CaseInsensitiveOption);
+
+    for (const QString& busy : std::as_const(m_busyFiles)) {
+        const QString deviceDir = QFileInfo(busy).absolutePath();
+
+        QFile dpm(deviceDir + u"/pp_dpm_sclk"_s);
+        if (dpm.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qreal cur = 0.0;
+            qreal max = 0.0;
+            const QStringList lines = QString::fromUtf8(dpm.readAll()).split(u'\n');
+            for (const QString& line : lines) {
+                const auto match = k_dpmRe.match(line.trimmed());
+                if (!match.hasMatch()) {
+                    continue;
+                }
+                const qreal mhz = match.captured(1).toDouble();
+                max = std::max(max, mhz);
+                if (!match.captured(2).isEmpty()) {
+                    cur = mhz;
+                }
+            }
+            setFrequency(cur, max);
+            return;
+        }
+
+        const QString cardDir = QFileInfo(deviceDir).absolutePath();
+        QFile curFile(cardDir + u"/gt_cur_freq_mhz"_s);
+        QFile maxFile(cardDir + u"/gt_max_freq_mhz"_s);
+        if (curFile.open(QIODevice::ReadOnly | QIODevice::Text) &&
+            maxFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            setFrequency(curFile.readAll().trimmed().toDouble(), maxFile.readAll().trimmed().toDouble());
+            return;
+        }
+    }
+
+    setFrequency(0.0, 0.0);
+}
+
 void Gpu::resetUsage() {
+    setFrequency(0.0, 0.0);
     if (std::abs(m_percentage) > 0.0001) {
         m_percentage = 0.0;
         emit percentageChanged();
