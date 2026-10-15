@@ -64,9 +64,18 @@ StyledRect {
 
                     StyledText {
                         Layout.alignment: Qt.AlignHCenter
+                        Layout.preferredWidth: pctMetrics.width
+                        horizontalAlignment: Text.AlignHCenter
                         text: Math.round(root.percentage * 100) + "%"
                         font: Tokens.font.title.builders.large.width(90).build()
                         color: root.accent
+                    }
+
+                    TextMetrics {
+                        id: pctMetrics
+
+                        text: "100%"
+                        font: Tokens.font.title.builders.large.width(90).build()
                     }
 
                     StyledText {

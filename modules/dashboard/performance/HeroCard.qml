@@ -93,7 +93,15 @@ StyledRect {
             }
 
             StyledText {
+                Layout.preferredWidth: tempMetrics.width
                 text: `${Math.ceil(GlobalConfig.services.useFahrenheitPerformance ? root.temperature * 1.8 + 32 : root.temperature)}°${GlobalConfig.services.useFahrenheitPerformance ? "F" : "C"}`
+                font: Tokens.font.body.builders.medium.build()
+            }
+
+            TextMetrics {
+                id: tempMetrics
+
+                text: `100°${GlobalConfig.services.useFahrenheitPerformance ? "F" : "C"}`
                 font: Tokens.font.body.builders.medium.build()
             }
         }
@@ -140,8 +148,17 @@ StyledRect {
 
         StyledText {
             anchors.centerIn: parent
+            width: usageMetrics.width
+            horizontalAlignment: Text.AlignHCenter
             text: isNaN(root.usage) ? "...%" : Math.round(root.usage * 100) + "%"
             color: root.accent
+            font: Tokens.font.headline.builders.small.width(50).build()
+        }
+
+        TextMetrics {
+            id: usageMetrics
+
+            text: "100%"
             font: Tokens.font.headline.builders.small.width(50).build()
         }
     }
