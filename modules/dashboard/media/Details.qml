@@ -27,6 +27,33 @@ ColumnLayout {
 
     spacing: Tokens.spacing.extraSmall
 
+    RowLayout {
+        Layout.fillWidth: true
+        visible: Players.list.length > 1
+        spacing: Tokens.spacing.small
+
+        IconButton {
+            type: IconButton.Text
+            icon: "chevron_left"
+            onClicked: Players.cycle(-1)
+        }
+
+        StyledText {
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            text: qsTr("%1 (%2/%3)").arg(Players.getIdentity(Players.active)).arg(Players.list.indexOf(Players.active) + 1).arg(Players.list.length)
+            color: Colours.palette.m3onSurfaceVariant
+            font: Tokens.font.label.medium
+            elide: Text.ElideRight
+        }
+
+        IconButton {
+            type: IconButton.Text
+            icon: "chevron_right"
+            onClicked: Players.cycle(1)
+        }
+    }
+
     Timer {
         running: Players.active?.isPlaying ?? false
         interval: GlobalConfig.dashboard.mediaUpdateInterval

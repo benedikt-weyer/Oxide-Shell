@@ -25,6 +25,15 @@ Singleton {
         return alias?.to ?? player.identity;
     }
 
+    // Switches to the next (step = 1) or previous (step = -1) player, wrapping around
+    function cycle(step: int): void {
+        const n = list.length;
+        if (n < 2)
+            return;
+        const current = list.indexOf(active);
+        manualActive = list[((current < 0 ? 0 : current) + step + n) % n];
+    }
+
     function getArtUrl(player: MprisPlayer): string {
         if (!player)
             return "";
