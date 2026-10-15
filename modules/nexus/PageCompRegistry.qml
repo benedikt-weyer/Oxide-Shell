@@ -136,14 +136,6 @@ QtObject {
             }
         },
         Component {
-            // Updates
-            StackPage {
-                Component {
-                    UpdatesPage {}
-                }
-            }
-        },
-        Component {
             // Plugins
             StackPage {
                 Component {

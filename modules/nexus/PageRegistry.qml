@@ -49,12 +49,6 @@ QtObject {
             category: "system"
         },
         {
-            label: qsTr("Updates"),
-            icon: "update",
-            description: qsTr("System updates"),
-            category: "system"
-        },
-        {
             label: qsTr("Plugins"),
             icon: "extension",
             description: qsTr("Manage plugins"),

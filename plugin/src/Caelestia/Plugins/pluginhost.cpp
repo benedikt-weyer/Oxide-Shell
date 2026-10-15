@@ -165,8 +165,20 @@ QVariantList children(const wire::Box& box, int depth) {
 }
 
 QVariantMap boxToVariant(const QString& type, const wire::Box& box, int depth) {
+    QString surface = u"none"_s;
+    switch (box.surface()) {
+    case wire::SURFACE_CARD:
+        surface = u"card"_s;
+        break;
+    case wire::SURFACE_CARD_LOW:
+        surface = u"cardLow"_s;
+        break;
+    default:
+        break;
+    }
     return { { u"type"_s, type }, { u"spacing"_s, box.spacing() }, { u"align"_s, align(box.align()) },
-        { u"fill"_s, box.fill() }, { u"children"_s, children(box, depth) } };
+        { u"fill"_s, box.fill() }, { u"surface"_s, surface }, { u"padding"_s, box.padding() },
+        { u"children"_s, children(box, depth) } };
 }
 
 QVariantMap nodeToVariant(const wire::Node& node, int depth) {
@@ -193,11 +205,23 @@ QVariantMap nodeToVariant(const wire::Node& node, int depth) {
         case wire::TEXT_STYLE_DISPLAY:
             style = u"display"_s;
             break;
+        case wire::TEXT_STYLE_MONO:
+            style = u"mono"_s;
+            break;
+        case wire::TEXT_STYLE_HEADLINE:
+            style = u"headline"_s;
+            break;
         default:
             break;
         }
+        QString elide = u"none"_s;
+        if (t.elide() == wire::ELIDE_RIGHT) {
+            elide = u"right"_s;
+        } else if (t.elide() == wire::ELIDE_MIDDLE) {
+            elide = u"middle"_s;
+        }
         return { { u"type"_s, u"text"_s }, { u"text"_s, toQString(t.text()) }, { u"style"_s, style },
-            { u"tone"_s, tone(t.tone()) } };
+            { u"tone"_s, tone(t.tone()) }, { u"fill"_s, t.fill() }, { u"elide"_s, elide } };
     }
     case wire::Node::kIcon: {
         const auto& i = node.icon();
@@ -209,7 +233,8 @@ QVariantMap nodeToVariant(const wire::Node& node, int depth) {
         return { { u"type"_s, u"progress"_s }, { u"fraction"_s, p.fraction() },
             { u"shape"_s, p.shape() == wire::PROGRESS_SHAPE_LINEAR ? u"linear"_s : u"circular"_s },
             { u"label"_s, toQString(p.label()) }, { u"sublabel"_s, toQString(p.sublabel()) },
-            { u"tone"_s, tone(p.tone()) }, { u"size"_s, p.size() } };
+            { u"tone"_s, tone(p.tone()) }, { u"size"_s, p.size() }, { u"indeterminate"_s, p.indeterminate() },
+            { u"fill"_s, p.fill() } };
     }
     case wire::Node::kButton: {
         const auto& b = node.button();
@@ -226,12 +251,24 @@ QVariantMap nodeToVariant(const wire::Node& node, int depth) {
         }
         return { { u"type"_s, u"button"_s }, { u"label"_s, toQString(b.label()) }, { u"icon"_s, toQString(b.icon()) },
             { u"actionId"_s, toQString(b.action_id()) }, { u"payload"_s, toQString(b.payload()) },
-            { u"style"_s, style }, { u"disabled"_s, b.disabled() } };
+            { u"style"_s, style }, { u"disabled"_s, b.disabled() }, { u"fill"_s, b.fill() } };
     }
     case wire::Node::kSpacer:
         return { { u"type"_s, u"spacer"_s }, { u"size"_s, node.spacer().size() } };
     case wire::Node::kDivider:
         return { { u"type"_s, u"divider"_s } };
+    case wire::Node::kSpinner:
+        return { { u"type"_s, u"spinner"_s }, { u"size"_s, node.spinner().size() } };
+    case wire::Node::kLogView: {
+        const auto& l = node.log_view();
+        QVariantList lines;
+        lines.reserve(l.lines_size());
+        for (const wire::LogLine& line : l.lines()) {
+            lines.append(QVariantMap{ { u"text"_s, toQString(line.text()) }, { u"isError"_s, line.is_error() } });
+        }
+        return { { u"type"_s, u"logView"_s }, { u"lines"_s, lines }, { u"height"_s, l.height() },
+            { u"placeholder"_s, toQString(l.placeholder()) } };
+    }
     case wire::Node::KIND_NOT_SET:
         break;
     }

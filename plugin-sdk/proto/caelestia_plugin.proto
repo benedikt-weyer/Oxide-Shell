@@ -197,6 +197,9 @@ message Node {
         Button button = 6;
         Spacer spacer = 7;
         Divider divider = 8;
+        // Added in API 1.1.
+        Spinner spinner = 9;
+        LogView log_view = 10;
     }
 }
 
@@ -207,6 +210,18 @@ message Box {
     Align align = 3;
     // Expand to the available width instead of hugging the content.
     bool fill = 4;
+    // API 1.1: draws the container as a rounded card. `padding` (px) is the
+    // inset between the card edge and the children; ignored without a surface.
+    Surface surface = 5;
+    double padding = 6;
+}
+
+// API 1.1.
+enum Surface {
+    SURFACE_NONE = 0;
+    SURFACE_CARD = 1;
+    // A less prominent card, e.g. for secondary output.
+    SURFACE_CARD_LOW = 2;
 }
 
 enum TextStyle {
@@ -215,12 +230,27 @@ enum TextStyle {
     TEXT_STYLE_TITLE = 2;
     // Very large, for timers and the like.
     TEXT_STYLE_DISPLAY = 3;
+    // API 1.1: monospace, for paths, hashes and log lines.
+    TEXT_STYLE_MONO = 4;
+    // API 1.1: a large heading above TEXT_STYLE_TITLE.
+    TEXT_STYLE_HEADLINE = 5;
+}
+
+// API 1.1.
+enum Elide {
+    ELIDE_NONE = 0;
+    ELIDE_RIGHT = 1;
+    ELIDE_MIDDLE = 2;
 }
 
 message Text {
     string text = 1;
     TextStyle style = 2;
     Tone tone = 3;
+    // API 1.1: take the remaining width of the parent row, and cut the text
+    // at `elide` instead of wrapping when it doesn't fit.
+    bool fill = 4;
+    Elide elide = 5;
 }
 
 message Icon {
@@ -245,6 +275,11 @@ message Progress {
     Tone tone = 5;
     // Diameter (circular) or width (linear) in px; 0 picks a default.
     double size = 6;
+    // API 1.1: ignore `fraction` and show an endless animation, for work
+    // whose progress is unknown. Linear bars only.
+    bool indeterminate = 7;
+    // API 1.1: stretch a linear bar to the available width.
+    bool fill = 8;
 }
 
 enum ButtonStyle {
@@ -261,6 +296,9 @@ message Button {
     string payload = 4;
     ButtonStyle style = 5;
     bool disabled = 6;
+    // API 1.1: stretch to the available width of the parent row/column. A
+    // button with an icon but no label is drawn as a round icon-only button.
+    bool fill = 7;
 }
 
 message Spacer {
@@ -269,6 +307,27 @@ message Spacer {
 }
 
 message Divider {}
+
+// API 1.1: a small animated activity indicator.
+message Spinner {
+    // Diameter in px; 0 picks a default.
+    double size = 1;
+}
+
+// API 1.1: a bounded, scrolling list of monospace lines (build output, logs).
+// The view sticks to the newest line until the user scrolls up.
+message LogView {
+    repeated LogLine lines = 1;
+    // Height in px; 0 picks a default.
+    double height = 2;
+    // Shown while `lines` is empty.
+    string placeholder = 3;
+}
+
+message LogLine {
+    string text = 1;
+    bool is_error = 2;
+}
 
 message InvokeActionRequest {
     string view_id = 1;

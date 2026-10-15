@@ -7,9 +7,7 @@ pkg_check_modules(Cava IMPORTED_TARGET libcava QUIET)
 if(NOT Cava_FOUND)
     pkg_check_modules(Cava IMPORTED_TARGET cava REQUIRED)
 endif()
-# For Caelestia.NixBackend's gRPC client (see plugin/src/Caelestia/NixBackend) -
-# talks to nix-backend-generic (../nix-backend-generic), built and shipped
-# separately as its own Rust binary.
+# For Caelestia.Plugins' gRPC client (see plugin/src/Caelestia/Plugins).
 find_package(Protobuf CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 include(cmake/sensorslib.cmake)

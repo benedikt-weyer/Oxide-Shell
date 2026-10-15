@@ -13,7 +13,7 @@
 //! ```
 
 use crate::proto;
-pub use crate::proto::{Align, ButtonStyle, ProgressShape, TextStyle, Tone, Urgency};
+pub use crate::proto::{Align, ButtonStyle, Elide, ProgressShape, Surface, TextStyle, Tone, Urgency};
 
 /// A widget. Convert the typed builders with `.into()`.
 #[derive(Clone, Debug)]
@@ -112,6 +112,18 @@ impl Container {
         self.inner.fill = true;
         self
     }
+
+    /// Draws the container as a rounded card (API 1.1).
+    pub fn surface(mut self, surface: Surface) -> Self {
+        self.inner.set_surface(surface);
+        self
+    }
+
+    /// Inset between a card's edge and its children, in px (API 1.1).
+    pub fn padding(mut self, padding: f64) -> Self {
+        self.inner.padding = padding;
+        self
+    }
 }
 
 impl From<Container> for Node {
@@ -145,6 +157,14 @@ impl Text {
 
     pub fn tone(mut self, tone: Tone) -> Self {
         self.0.set_tone(tone);
+        self
+    }
+
+    /// Takes the remaining width of the parent row and elides instead of
+    /// wrapping (API 1.1).
+    pub fn fill(mut self, elide: Elide) -> Self {
+        self.0.fill = true;
+        self.0.set_elide(elide);
         self
     }
 }
@@ -219,6 +239,18 @@ impl Progress {
         self.0.size = size;
         self
     }
+
+    /// Endless animation instead of `fraction` (API 1.1, linear bars only).
+    pub fn indeterminate(mut self, indeterminate: bool) -> Self {
+        self.0.indeterminate = indeterminate;
+        self
+    }
+
+    /// Stretches a linear bar to the available width (API 1.1).
+    pub fn fill(mut self) -> Self {
+        self.0.fill = true;
+        self
+    }
 }
 into_node!(Progress, Progress, |w: Progress| w.0);
 
@@ -258,6 +290,12 @@ impl Button {
         self.0.disabled = disabled;
         self
     }
+
+    /// Stretches to the available width (API 1.1).
+    pub fn fill(mut self) -> Self {
+        self.0.fill = true;
+        self
+    }
 }
 into_node!(Button, Button, |w: Button| w.0);
 
@@ -273,6 +311,54 @@ pub fn divider() -> Node {
         kind: Some(proto::node::Kind::Divider(proto::Divider {})),
     })
 }
+
+#[derive(Clone, Debug)]
+pub struct Spinner(proto::Spinner);
+
+/// A small animated activity indicator (API 1.1).
+pub fn spinner() -> Spinner {
+    Spinner(proto::Spinner::default())
+}
+
+impl Spinner {
+    pub fn size(mut self, size: f64) -> Self {
+        self.0.size = size;
+        self
+    }
+}
+into_node!(Spinner, Spinner, |w: Spinner| w.0);
+
+#[derive(Clone, Debug)]
+pub struct LogView(proto::LogView);
+
+/// A bounded, scrolling list of monospace lines that follows the newest one
+/// (API 1.1).
+pub fn log_view() -> LogView {
+    LogView(proto::LogView::default())
+}
+
+impl LogView {
+    /// Appends a line; `is_error` lines are shown in the error colour.
+    pub fn line(mut self, text: impl Into<String>, is_error: bool) -> Self {
+        self.0.lines.push(proto::LogLine {
+            text: text.into(),
+            is_error,
+        });
+        self
+    }
+
+    pub fn height(mut self, height: f64) -> Self {
+        self.0.height = height;
+        self
+    }
+
+    /// Shown while there are no lines.
+    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+        self.0.placeholder = placeholder.into();
+        self
+    }
+}
+into_node!(LogView, LogView, |w: LogView| w.0);
 
 /// A toast the shell shows on the plugin's behalf, see [`Context::notify`](crate::Context::notify).
 #[derive(Clone, Debug, Default)]

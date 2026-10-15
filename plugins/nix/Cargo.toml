@@ -1,0 +1,25 @@
+[package]
+name = "caelestia-plugin-nix"
+version = "0.1.0"
+edition = "2021"
+description = "First-party caelestia-shell plugin: NixOS flake updates and rebuilds on the dashboard"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "caelestia-plugin-nix"
+path = "src/main.rs"
+
+[dependencies]
+caelestia-plugin-sdk = { path = "../../plugin-sdk/rust" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "process", "io-util", "net"] }
+tonic = "0.11"
+tokio-stream = { version = "0.1", features = ["net"] }
+prost = "0.12"
+tower = "0.4"
+
+[build-dependencies]
+tonic-build = "0.11"
+
+[profile.release]
+lto = true
+strip = true

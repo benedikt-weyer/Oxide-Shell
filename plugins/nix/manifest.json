@@ -1,0 +1,10 @@
+{
+    "id": "nix",
+    "name": "NixOS",
+    "version": "0.1.0",
+    "description": "Update the system flake and rebuild NixOS from the dashboard.",
+    "author": "Caelestia",
+    "icon": "terminal",
+    "api": { "major": 1, "minor": 1 },
+    "exec": "bin/caelestia-plugin-nix"
+}

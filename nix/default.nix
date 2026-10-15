@@ -65,10 +65,11 @@
     rustPlatform.buildRustPackage {
       pname = "caelestia-plugin-${id}";
       version = (lib.importTOML ./../plugins/${id}/Cargo.toml).package.version;
-      # The crate depends on the SDK by relative path, so both are needed.
+      # The crate depends on the SDK by relative path, so both are needed;
+      # the nix plugin also generates its client from nix-backend-generic's proto.
       src = lib.fileset.toSource {
         root = ./..;
-        fileset = lib.fileset.unions [./../plugin-sdk/rust ./../plugin-sdk/proto ./../plugins/${id}];
+        fileset = lib.fileset.unions [./../plugin-sdk/rust ./../plugin-sdk/proto ./../nix-backend-generic/proto ./../plugins/${id}];
       };
       cargoRoot = "plugins/${id}";
       buildAndTestSubdir = "plugins/${id}";
@@ -86,7 +87,7 @@
       '';
     };
 
-  bundledPluginList = map mkPlugin ["pomodoro"];
+  bundledPluginList = map mkPlugin ["pomodoro" "nix"];
 
   # The directory CAELESTIA_BUNDLED_PLUGINS_DIR points at: one real copy per
   # plugin (not symlinks, installing copies them into the user's data dir).
@@ -149,13 +150,9 @@
     name = "caelestia-qml-plugin${lib.optionalString debug "-debug"}";
     src = lib.fileset.toSource {
       root = ./..;
-      # plugin/src/Caelestia/NixBackend codegens its gRPC bindings straight
-      # from this .proto at build time (see plugin/cmake/grpc-proto.cmake) -
-      # the rest of nix-backend-generic (the Rust crate) is built and
-      # packaged separately, see nixBackendGeneric below.
       # plugin-sdk/proto is the plugin API Caelestia.Plugins (the host side)
       # generates its gRPC bindings from.
-      fileset = lib.fileset.unions [./../CMakeLists.txt ./../plugin ./../nix-backend-generic/proto ./../plugin-sdk/proto];
+      fileset = lib.fileset.unions [./../CMakeLists.txt ./../plugin ./../plugin-sdk/proto];
     };
 
     nativeBuildInputs = [cmake ninja pkg-config];
@@ -167,9 +164,8 @@
     #
     # protobuf/grpc (+ their own abseil-cpp/c-ares/re2 link deps, which
     # nixpkgs' grpc/protobuf cmake configs expect *us* to find_package too)
-    # are for Caelestia.NixBackend's gRPC client (see
-    # plugin/src/Caelestia/NixBackend), codegenerated at build time from
-    # ../nix-backend-generic/proto/nix_backend.proto.
+    # are for Caelestia.Plugins' gRPC client (see plugin/src/Caelestia/Plugins),
+    # codegenerated at build time from ../plugin-sdk/proto.
     buildInputs = [
       qt6.qtbase
       qt6.qtdeclarative

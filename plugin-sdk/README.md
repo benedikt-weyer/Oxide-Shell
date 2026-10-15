@@ -211,13 +211,15 @@ disable that warning for plugin code.
 
 | widget     | purpose / main fields                                                        |
 |------------|-------------------------------------------------------------------------------|
-| `column`, `row` | containers: `spacing`, cross-axis `align`, `fill`, children               |
-| `text`     | `text`, style (`body`/`label`/`title`/`display`), tone                        |
+| `column`, `row` | containers: `spacing`, cross-axis `align`, `fill`, children; 1.1: `surface` (`card`/`card_low`) + `padding` |
+| `text`     | `text`, style (`body`/`label`/`title`/`display`; 1.1: `mono`/`headline`), tone; 1.1: `fill` + `elide` |
 | `icon`     | Material Symbols `name`, `size`, tone                                         |
-| `progress` | `fraction` 0‥1, circular or linear, `label`/`sublabel`, tone, `size`          |
-| `button`   | `label`, `icon`, `action_id`, `payload`, style (`filled`/`tonal`/`text`), `disabled` |
+| `progress` | `fraction` 0‥1, circular or linear, `label`/`sublabel`, tone, `size`; 1.1: `indeterminate`, `fill` |
+| `button`   | `label`, `icon`, `action_id`, `payload`, style (`filled`/`tonal`/`text`), `disabled`; 1.1: `fill`; an icon without a label is a round icon button |
 | `spacer`   | fixed `size` px, or flexible when 0                                           |
 | `divider`  | thin line                                                                     |
+| `spinner`  | 1.1: small animated activity indicator, `size`                                |
+| `log_view` | 1.1: scrolling monospace `lines` (`text`, `is_error`), `height`, `placeholder`; follows the newest line |
 
 Tones: default, primary, secondary, tertiary, muted, error.
 
@@ -234,11 +236,12 @@ works while the plugin is stopped; edits are applied at the next start.
 ```sh
 cargo test --manifest-path plugin-sdk/rust/Cargo.toml          # SDK against a real server
 cargo test --manifest-path plugins/pomodoro/Cargo.toml         # timer logic
+cargo test --manifest-path plugins/nix/Cargo.toml              # build/rebuild state and view
 cmake -S plugin-sdk/cpp -B /tmp/sdk && cmake --build /tmp/sdk && ctest --test-dir /tmp/sdk
 scripts/build-plugins.sh                                       # fills build/plugins
 cmake -B build -DCAELESTIA_BUILD_PLUGIN_TESTS=ON && cmake --build build
 ctest --test-dir build/plugin/src/Caelestia/Plugins            # shell side, real pomodoro binary
 ```
 
-`nix build .#plugin-pomodoro` and `nix build .#plugin-sdk-cpp` run the same
+`nix build .#plugin-pomodoro .#plugin-nix` and `nix build .#plugin-sdk-cpp` run the same
 unit tests inside the sandbox.

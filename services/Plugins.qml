@@ -25,6 +25,10 @@ Singleton {
     readonly property string lastError: PluginManager.lastError
     readonly property string apiVersion: PluginManager.apiVersion
 
+    // Scroll state of plugin log views, {"<plugin>/<view>": {follow, y}}: a view
+    // update rebuilds the whole widget tree, so the widget can't keep it itself.
+    property var logScroll: ({})
+
     signal viewUpdated(pluginId: string, viewId: string)
     signal settingsChanged(pluginId: string)
 

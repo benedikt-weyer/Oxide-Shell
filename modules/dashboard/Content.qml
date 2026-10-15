@@ -41,12 +41,6 @@ Item {
                 iconName: "cloud",
                 text: qsTr("Weather"),
                 enabled: Config.dashboard.showWeather
-            },
-            {
-                component: nixComponent,
-                iconName: "terminal",
-                text: qsTr("Nix"),
-                enabled: Config.dashboard.showNix
             }
         ];
         // Plugin tabs always come last
@@ -209,12 +203,6 @@ Item {
                 id: weatherComponent
 
                 WeatherTab {}
-            }
-
-            Component {
-                id: nixComponent
-
-                NixTab {}
             }
 
             Component {

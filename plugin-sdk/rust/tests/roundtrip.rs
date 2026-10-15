@@ -100,7 +100,7 @@ async fn full_roundtrip() {
     );
 
     let reply = client
-        .handshake(handshake(1, 0))
+        .handshake(handshake(1, 1))
         .await
         .unwrap()
         .into_inner();

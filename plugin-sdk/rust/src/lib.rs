@@ -61,7 +61,7 @@ pub use settings::{Field, Section, Settings, SettingsSchema};
 
 /// The API version this SDK implements. Bumped together with
 /// `plugin-sdk/proto/caelestia_plugin.proto`; see the versioning rules there.
-pub const API_VERSION: ApiVersion = ApiVersion { major: 1, minor: 0 };
+pub const API_VERSION: ApiVersion = ApiVersion { major: 1, minor: 1 };
 
 /// Whether a plugin built against `plugin` can run on a host that implements `host`.
 pub fn is_compatible(plugin: &ApiVersion, host: &ApiVersion) -> bool {

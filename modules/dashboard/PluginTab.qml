@@ -18,7 +18,10 @@ Item {
     Loader {
         id: content
 
-        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Tokens.padding.large
+        anchors.rightMargin: Tokens.padding.large
         anchors.verticalCenter: parent.verticalCenter
 
         active: !!root.tree && !!root.tree.type

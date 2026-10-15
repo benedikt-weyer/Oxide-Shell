@@ -561,7 +561,6 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "showMedia": true,
         "showPerformance": true,
         "showWeather": true,
-        "showNix": true,
         "mediaUpdateInterval": 500,
         "resourceUpdateInterval": 1000,
         "dragThreshold": 50,
@@ -714,10 +713,6 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
     "nexus": {
         "wallpapersPerRow": 4,
         "networkRescanInterval": 15000
-    },
-    "nixBackend": {
-        "systemConfigDir": "",
-        "systemHostName": ""
     },
     "notifs": {
         "expire": true,

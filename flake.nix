@@ -52,6 +52,7 @@
       nix-backend-generic = caelestia-shell.nixBackendGeneric;
       iron-polkit = pkgs.callPackage ./nix/iron-polkit.nix {};
       plugin-pomodoro = caelestia-shell.plugins.caelestia-plugin-pomodoro;
+      plugin-nix = caelestia-shell.plugins.caelestia-plugin-nix;
       plugin-sdk-cpp = pkgs.callPackage ./nix/plugin-sdk-cpp.nix {stdenv = pkgs.clangStdenv;};
       default = caelestia-shell;
     });

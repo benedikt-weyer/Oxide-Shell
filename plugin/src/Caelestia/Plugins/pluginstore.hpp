@@ -21,7 +21,7 @@ struct ApiVersion {
     quint32 minor;
 };
 
-inline constexpr ApiVersion hostApiVersion{ 1, 0 };
+inline constexpr ApiVersion hostApiVersion{ 1, 1 };
 
 [[nodiscard]] constexpr bool isCompatible(ApiVersion plugin, ApiVersion host) {
     return plugin.major == host.major && plugin.minor <= host.minor;

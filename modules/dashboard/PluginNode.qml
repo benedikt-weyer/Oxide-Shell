@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Layouts
 import Caelestia.Config
 import qs.components
+import qs.components.containers
 import qs.components.controls
 import qs.services
 
@@ -16,6 +17,8 @@ Loader {
     property var node
     property string pluginId
     property string viewId
+
+    readonly property bool hasSurface: (node?.surface ?? "none") !== "none"
 
     function toneColour(tone: string): color {
         switch (tone) {
@@ -37,9 +40,9 @@ Loader {
     sourceComponent: {
         switch (node?.type) {
         case "column":
-            return columnComp;
+            return hasSurface ? cardComp : columnComp;
         case "row":
-            return rowComp;
+            return hasSurface ? cardComp : rowComp;
         case "text":
             return textComp;
         case "icon":
@@ -47,11 +50,15 @@ Loader {
         case "progress":
             return node.shape === "linear" ? linearComp : circularComp;
         case "button":
-            return buttonComp;
+            return node.label === "" && node.icon !== "" ? iconButtonComp : buttonComp;
         case "spacer":
             return spacerComp;
         case "divider":
             return dividerComp;
+        case "spinner":
+            return spinnerComp;
+        case "logView":
+            return logComp;
         default:
             return null;
         }
@@ -70,6 +77,27 @@ Loader {
                     inColumn: true
                     align: root.node.align
                 }
+            }
+        }
+    }
+
+    Component {
+        id: cardComp
+
+        StyledRect {
+            implicitWidth: cardContent.implicitWidth + root.node.padding * 2
+            implicitHeight: cardContent.implicitHeight + root.node.padding * 2
+
+            radius: Tokens.rounding.large
+            color: root.node.surface === "cardLow" ? Colours.tPalette.m3surfaceContainerLow : Colours.tPalette.m3surfaceContainer
+
+            Loader {
+                id: cardContent
+
+                anchors.fill: parent
+                anchors.margins: root.node.padding
+
+                sourceComponent: root.node.type === "row" ? rowComp : columnComp
             }
         }
     }
@@ -97,13 +125,18 @@ Loader {
         StyledText {
             text: root.node.text
             color: root.toneColour(root.node.tone)
-            wrapMode: Text.WordWrap
+            wrapMode: root.node.elide === "none" ? Text.WordWrap : Text.NoWrap
+            elide: root.node.elide === "right" ? Text.ElideRight : root.node.elide === "middle" ? Text.ElideMiddle : Text.ElideNone
             font: {
                 switch (root.node.style) {
                 case "label":
                     return Tokens.font.label.medium;
                 case "title":
                     return Tokens.font.title.large;
+                case "headline":
+                    return Tokens.font.body.builders.large.size(28).weight(Font.DemiBold).build();
+                case "mono":
+                    return Tokens.font.mono.small;
                 case "display":
                     return Tokens.font.body.builders.large.size(48).weight(Font.DemiBold).build();
                 default:
@@ -176,6 +209,7 @@ Loader {
 
             StyledProgressBar {
                 Layout.fillWidth: true
+                indeterminate: root.node.indeterminate
                 value: root.node.fraction
                 fgColour: root.toneColour(root.node.tone === "default" ? "primary" : root.node.tone)
             }
@@ -187,6 +221,19 @@ Loader {
                 color: Colours.palette.m3outline
                 font: Tokens.font.label.small
             }
+        }
+    }
+
+    Component {
+        id: iconButtonComp
+
+        IconButton {
+            icon: root.node.icon
+            type: root.node.style === "filled" ? IconButton.Filled : root.node.style === "tonal" ? IconButton.Tonal : IconButton.Text
+            isRound: true
+            font: Tokens.font.icon.medium
+            disabled: root.node.disabled
+            onClicked: Plugins.invokeAction(root.pluginId, root.viewId, root.node.actionId, root.node.payload)
         }
     }
 
@@ -223,6 +270,112 @@ Loader {
         StyledRect {
             implicitHeight: 1
             color: Colours.palette.m3outlineVariant
+        }
+    }
+
+    Component {
+        id: spinnerComp
+
+        LoadingIndicator {
+            animated: true
+            implicitWidth: root.node.size > 0 ? root.node.size : 20
+            implicitHeight: implicitWidth
+        }
+    }
+
+    Component {
+        id: logComp
+
+        Item {
+            id: log
+
+            readonly property string scrollKey: `${root.pluginId}/${root.viewId}`
+            readonly property var lines: root.node.lines ?? []
+
+            // Keeps the model in step with the pushed lines: a view update
+            // replaces the whole tree, so appending only the new lines (rather
+            // than resetting) is what preserves the user's scroll position.
+            function sync(): void {
+                const n = lines.length;
+                let prefix = logModel.count <= n;
+                if (prefix && logModel.count > 0) {
+                    const last = logModel.get(logModel.count - 1);
+                    prefix = last.message === lines[logModel.count - 1].text && last.isError === lines[logModel.count - 1].isError;
+                }
+                if (!prefix)
+                    logModel.clear();
+                for (let i = logModel.count; i < n; i++)
+                    logModel.append({
+                        message: lines[i].text,
+                        isError: lines[i].isError
+                    });
+            }
+
+            implicitWidth: 300
+            implicitHeight: root.node.height > 0 ? root.node.height : 200
+
+            onLinesChanged: sync()
+            Component.onCompleted: sync()
+
+            ListModel {
+                id: logModel
+            }
+
+            VerticalFadeListView {
+                id: logView
+
+                property bool followBottom: Plugins.logScroll[log.scrollKey]?.follow ?? true
+
+                function remember(): void {
+                    Plugins.logScroll[log.scrollKey] = {
+                        follow: followBottom,
+                        y: contentY
+                    };
+                }
+
+                anchors.fill: parent
+                clip: true
+                spacing: Tokens.spacing.extraSmall / 2
+                model: logModel
+
+                Component.onCompleted: {
+                    const saved = Plugins.logScroll[log.scrollKey];
+                    if (followBottom || !saved)
+                        positionViewAtEnd();
+                    else
+                        contentY = saved.y;
+                }
+                onCountChanged: if (followBottom)
+                    positionViewAtEnd()
+                onDragStarted: followBottom = false
+                onFlickStarted: followBottom = false
+                onAtYEndChanged: if (atYEnd)
+                    followBottom = true
+                onContentYChanged: remember()
+                onFollowBottomChanged: remember()
+
+                delegate: StyledText {
+                    id: line
+
+                    required property string message
+                    required property bool isError
+
+                    width: ListView.view ? ListView.view.width : implicitWidth
+
+                    text: line.message
+                    wrapMode: Text.Wrap
+                    font: Tokens.font.mono.small
+                    color: line.isError ? Colours.palette.m3error : Colours.palette.m3onSurfaceVariant
+                }
+
+                StyledText {
+                    anchors.centerIn: parent
+                    visible: logView.count === 0
+                    text: root.node.placeholder
+                    color: Colours.palette.m3outline
+                    font: Tokens.font.body.small
+                }
+            }
         }
     }
 

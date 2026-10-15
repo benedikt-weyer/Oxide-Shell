@@ -15,8 +15,8 @@ cmake --build build
 "$repo_root/scripts/build-plugins.sh" "$repo_root/build/plugins"
 export CAELESTIA_BUNDLED_PLUGINS_DIR="$repo_root/build/plugins"
 
-# NixBackendClient (plugin/src/Caelestia/NixBackend) spawns this on demand if
-# nothing's listening on its socket yet, but only if it's on PATH.
+# The nix plugin (plugins/nix) spawns this on demand if nothing's listening
+# on its socket yet, but only if it's on PATH.
 cargo build --release --manifest-path "$repo_root/nix-backend-generic/Cargo.toml"
 export PATH="$repo_root/nix-backend-generic/target/release:$PATH"
 
