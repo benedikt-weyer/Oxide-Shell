@@ -1,0 +1,314 @@
+syntax = "proto3";
+
+// Caelestia shell plugin API, version 1.x.
+//
+// Every plugin is its own process. It serves the `Plugin` service below on a
+// unix socket (path handed over in $CAELESTIA_PLUGIN_SOCKET) and the shell is
+// the only client. Plugin -> shell traffic (view updates, notifications) rides
+// on the server-streaming `Events` call, so the plugin never has to dial the
+// shell.
+//
+// Versioning
+// ----------
+// The package suffix (`v1`) is the *major* API version: a breaking change
+// (removing/renumbering a field, changing semantics) creates `v2` next to it.
+// Within a major version the API only grows (new optional fields, new oneof
+// members, new enum values, new RPCs), which is tracked by `ApiVersion.minor`.
+// Both sides exchange their version in `Handshake`:
+//
+//   compatible  <=>  plugin.major == host.major  &&  plugin.minor <= host.minor
+//
+// i.e. the host must know everything the plugin may rely on. Unknown fields,
+// oneof members and enum values must be ignored by both sides. The constants
+// the SDKs ship (API_VERSION) must be bumped together with changes here.
+package caelestia.plugin.v1;
+
+service Plugin {
+    // First call after the process is up. Carries both API versions and
+    // returns everything the shell needs to integrate the plugin.
+    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
+
+    // Pushes the complete, current set of setting values (schema defaults
+    // already filled in). Called right after the handshake and again whenever
+    // the user changes a value in Nexus.
+    rpc ApplySettings(ApplySettingsRequest) returns (ApplySettingsReply);
+
+    // Renders a view. The shell calls this once after subscribing to Events
+    // and then relies on ViewUpdate events.
+    rpc GetView(GetViewRequest) returns (View);
+
+    // A user interacted with a widget of a view (e.g. pressed a button).
+    rpc InvokeAction(InvokeActionRequest) returns (InvokeActionReply);
+
+    // Long-lived stream of plugin -> shell events. The shell opens it once
+    // per plugin run, before its first GetView.
+    rpc Events(EventsRequest) returns (stream PluginEvent);
+
+    // Asks the plugin to exit cleanly.
+    rpc Shutdown(ShutdownRequest) returns (ShutdownReply);
+}
+
+message ApiVersion {
+    uint32 major = 1;
+    uint32 minor = 2;
+}
+
+// ---------------------------------------------------------------- handshake
+
+message HandshakeRequest {
+    ApiVersion host_api_version = 1;
+    string host_version = 2;
+    // Directory the plugin may persist state in.
+    string data_dir = 3;
+}
+
+message HandshakeReply {
+    // The API version the plugin was built against.
+    ApiVersion api_version = 1;
+    string plugin_version = 2;
+    Contributions contributions = 3;
+    SettingsSchema settings_schema = 4;
+}
+
+// What the plugin hooks into. New hook points are added as new fields.
+message Contributions {
+    repeated DashboardTab dashboard_tabs = 1;
+}
+
+message DashboardTab {
+    // Passed back to GetView / InvokeAction and used in ViewUpdate.
+    string view_id = 1;
+    string title = 2;
+    // Material Symbols icon name.
+    string icon = 3;
+}
+
+// ----------------------------------------------------------------- settings
+
+// Declarative description of a plugin's settings page. The shell renders it
+// in Nexus and persists the values itself, so the page works while the plugin
+// is not running.
+message SettingsSchema {
+    repeated SettingsSection sections = 1;
+}
+
+message SettingsSection {
+    string title = 1;
+    string description = 2;
+    repeated SettingField fields = 3;
+}
+
+message SettingField {
+    // Unique within the plugin.
+    string key = 1;
+    string label = 2;
+    string description = 3;
+    oneof kind {
+        ToggleField toggle = 10;
+        NumberField number = 11;
+        TextField text = 12;
+        ChoiceField choice = 13;
+    }
+}
+
+message ToggleField {
+    bool default_value = 1;
+}
+
+message NumberField {
+    double default_value = 1;
+    double min = 2;
+    double max = 3;
+    // 0 means 1 for integer fields and continuous otherwise.
+    double step = 4;
+    // Shown next to the value, e.g. "min".
+    string unit = 5;
+    bool integer = 6;
+}
+
+message TextField {
+    string default_value = 1;
+    string placeholder = 2;
+}
+
+message ChoiceField {
+    string default_value = 1;
+    repeated Choice options = 2;
+}
+
+message Choice {
+    string value = 1;
+    string label = 2;
+}
+
+message SettingValue {
+    oneof value {
+        bool bool_value = 1;
+        double number_value = 2;
+        string string_value = 3;
+    }
+}
+
+message ApplySettingsRequest {
+    map<string, SettingValue> values = 1;
+}
+
+message ApplySettingsReply {
+    // Non-empty rejects the values; the shell shows it next to the plugin.
+    string error = 1;
+}
+
+// -------------------------------------------------------------------- views
+
+message GetViewRequest {
+    string view_id = 1;
+}
+
+message View {
+    string view_id = 1;
+    Node root = 2;
+}
+
+enum Tone {
+    TONE_DEFAULT = 0;
+    TONE_PRIMARY = 1;
+    TONE_SECONDARY = 2;
+    TONE_TERTIARY = 3;
+    // Dimmed, for secondary information.
+    TONE_MUTED = 4;
+    TONE_ERROR = 5;
+}
+
+enum Align {
+    ALIGN_START = 0;
+    ALIGN_CENTER = 1;
+    ALIGN_END = 2;
+}
+
+// A small, fixed widget vocabulary: the shell owns the look so plugins match
+// the theme without shipping any UI code.
+message Node {
+    oneof kind {
+        Box column = 1;
+        Box row = 2;
+        Text text = 3;
+        Icon icon = 4;
+        Progress progress = 5;
+        Button button = 6;
+        Spacer spacer = 7;
+        Divider divider = 8;
+    }
+}
+
+message Box {
+    repeated Node children = 1;
+    double spacing = 2;
+    // Cross-axis alignment of the children.
+    Align align = 3;
+    // Expand to the available width instead of hugging the content.
+    bool fill = 4;
+}
+
+enum TextStyle {
+    TEXT_STYLE_BODY = 0;
+    TEXT_STYLE_LABEL = 1;
+    TEXT_STYLE_TITLE = 2;
+    // Very large, for timers and the like.
+    TEXT_STYLE_DISPLAY = 3;
+}
+
+message Text {
+    string text = 1;
+    TextStyle style = 2;
+    Tone tone = 3;
+}
+
+message Icon {
+    // Material Symbols icon name.
+    string name = 1;
+    double size = 2;
+    Tone tone = 3;
+}
+
+enum ProgressShape {
+    PROGRESS_SHAPE_CIRCULAR = 0;
+    PROGRESS_SHAPE_LINEAR = 1;
+}
+
+message Progress {
+    // 0..1
+    double fraction = 1;
+    ProgressShape shape = 2;
+    // Centred inside circular indicators, above linear ones.
+    string label = 3;
+    string sublabel = 4;
+    Tone tone = 5;
+    // Diameter (circular) or width (linear) in px; 0 picks a default.
+    double size = 6;
+}
+
+enum ButtonStyle {
+    BUTTON_STYLE_FILLED = 0;
+    BUTTON_STYLE_TONAL = 1;
+    BUTTON_STYLE_TEXT = 2;
+}
+
+message Button {
+    string label = 1;
+    string icon = 2;
+    // Reported back through InvokeAction.
+    string action_id = 3;
+    string payload = 4;
+    ButtonStyle style = 5;
+    bool disabled = 6;
+}
+
+message Spacer {
+    // 0 expands to fill the remaining space.
+    double size = 1;
+}
+
+message Divider {}
+
+message InvokeActionRequest {
+    string view_id = 1;
+    string action_id = 2;
+    string payload = 3;
+}
+
+message InvokeActionReply {
+    string error = 1;
+}
+
+// ------------------------------------------------------------------- events
+
+message EventsRequest {}
+
+message PluginEvent {
+    oneof event {
+        ViewUpdate view_update = 1;
+        Notification notification = 2;
+    }
+}
+
+message ViewUpdate {
+    View view = 1;
+}
+
+enum Urgency {
+    URGENCY_NORMAL = 0;
+    URGENCY_LOW = 1;
+    URGENCY_CRITICAL = 2;
+}
+
+// Asks the shell to show a toast.
+message Notification {
+    string title = 1;
+    string body = 2;
+    // Material Symbols icon name.
+    string icon = 3;
+    Urgency urgency = 4;
+}
+
+message ShutdownRequest {}
+message ShutdownReply {}

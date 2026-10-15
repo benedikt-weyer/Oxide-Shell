@@ -51,6 +51,8 @@
       debug = caelestia-shell.override {debug = true;};
       nix-backend-generic = caelestia-shell.nixBackendGeneric;
       iron-polkit = pkgs.callPackage ./nix/iron-polkit.nix {};
+      plugin-pomodoro = caelestia-shell.plugins.caelestia-plugin-pomodoro;
+      plugin-sdk-cpp = pkgs.callPackage ./nix/plugin-sdk-cpp.nix {stdenv = pkgs.clangStdenv;};
       default = caelestia-shell;
     });
 

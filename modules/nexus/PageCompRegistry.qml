@@ -13,6 +13,7 @@ import qs.modules.nexus.pages.bluetooth
 import qs.modules.nexus.pages.compositor
 import qs.modules.nexus.pages.network
 import qs.modules.nexus.pages.panels
+import qs.modules.nexus.pages.plugins
 import qs.modules.nexus.pages.services
 import qs.modules.nexus.pages.wallandstyle
 import qs.modules.nexus.pages.panels.taskbar
@@ -143,7 +144,24 @@ QtObject {
             }
         },
         Component {
-            PlaceholderComp {}
+            // Plugins
+            StackPage {
+                Component {
+                    PluginsPage {}
+                }
+                Component {
+                    PluginDetailPage {}
+                }
+                Component {
+                    PluginSettingsPage {}
+                }
+                Component {
+                    BrowsePluginsPage {}
+                }
+                Component {
+                    PluginSourcesPage {}
+                }
+            }
         },
 
         // Shell

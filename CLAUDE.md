@@ -99,6 +99,15 @@ A polkit authentication agent, independent of the QML shell (own `Cargo.toml`/`C
 - The wayland/xkbcommon libs are `dlopen`ed, so the Nix package wraps the binary with `LD_LIBRARY_PATH`; without it startup panics with `NoWaylandLib`.
 - To test without a UI-less `pkexec`: run the binary, then `pkcheck --action-id org.freedesktop.systemd1.manage-units --process $$ --allow-user-interaction` (`pkexec` needs the setuid wrapper from a switched NixOS generation).
 
+### Plugin system (`plugin-sdk/`, `plugins/`, `plugin/src/Caelestia/Plugins/`)
+Third-party/first-party plugins are separate processes speaking gRPC over a unix socket; full docs in `plugin-sdk/README.md`.
+- `plugin-sdk/proto/caelestia_plugin.proto` — the versioned API (package `v1` = major; additive changes bump minor). Single source of truth for the host, the Rust SDK (`plugin-sdk/rust`, tonic) and the C++ SDK (`plugin-sdk/cpp`, `Caelestia::PluginSdk`, opt-in via `ENABLE_MODULES+=plugin-sdk-cpp`). API version constants live in three places (`API_VERSION`, `kApiVersion`, `hostApiVersion` in `pluginstore.hpp`): bump together.
+- Host = QML module `Caelestia.Plugins` (`PluginManager` singleton → `services/Plugins.qml` facade). The plugin is the gRPC *server*; the shell spawns it (`CAELESTIA_PLUGIN_SOCKET`/`_ID` env), does Handshake → opens `Events` stream → `ApplySettings` → `GetView`. Plugins contribute dashboard tabs (declarative widget tree rendered by `modules/dashboard/PluginNode.qml`, recursion goes through `Loader.source`: QML forbids self-instantiation by type name) and a settings schema (rendered generically by `modules/nexus/pages/plugins/PluginSettingsPage.qml`; values stored by the shell in `~/.config/caelestia/plugins/<id>/settings.json`).
+- Installing/removing/sources: `pluginstore.cpp` (manifest.json, directory or `index.json` sources, tar.gz with sha256, path-traversal checks). Installed plugins live in `~/.local/share/caelestia/plugins/<id>/`. The default (undeletable) source is `$CAELESTIA_BUNDLED_PLUGINS_DIR`: set by the Nix wrapper, filled by `scripts/build-plugins.sh` in dev (`.envrc`, `run.sh` do this).
+- First-party plugin: `plugins/pomodoro` (Rust, depends on the SDK by path). Nix: `nix/default.nix` `mkPlugin`; `nix build .#plugin-pomodoro .#plugin-sdk-cpp`.
+- Tests: `cargo test` in `plugin-sdk/rust` and `plugins/pomodoro`; `ctest` for the C++ SDK; host e2e (real pomodoro binary) via `-DCAELESTIA_BUILD_PLUGIN_TESTS=ON` then `ctest --test-dir build/plugin/src/Caelestia/Plugins` (needs `scripts/build-plugins.sh` first).
+- Per-plugin RPCs go through one serial worker per session (`Session::enqueue`): a settings change must never overtake the previous one.
+
 ## Conventions
 
 - Commit messages: `module: change` (lowercase subject, no leading capital — enforced by `check-pr-title.yml`). See allowed scopes in `.github/workflows/check-pr-title.yml` (shell modules like `bar`, `dashboard`, `launcher`, ... and plugin areas like `core`, `config`, `services`, `settings`, `wayland`/`plugins`, ...). Squash multiple changes into one commit when related; put the most impactful change in the subject and the rest in the body.

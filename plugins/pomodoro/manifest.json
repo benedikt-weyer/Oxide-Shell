@@ -1,0 +1,10 @@
+{
+    "id": "pomodoro",
+    "name": "Pomodoro Timer",
+    "version": "0.1.0",
+    "description": "Focus/break timer with its own dashboard tab.",
+    "author": "Caelestia",
+    "icon": "timer",
+    "api": { "major": 1, "minor": 0 },
+    "exec": "bin/caelestia-plugin-pomodoro"
+}

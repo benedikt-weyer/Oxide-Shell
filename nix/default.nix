@@ -29,6 +29,7 @@
   ninja,
   pkg-config,
   rustPlatform,
+  runCommand,
   protobuf,
   grpc,
   abseil-cpp,
@@ -54,6 +55,45 @@
 
     meta.mainProgram = "nix-backend-generic";
   };
+
+  # First-party plugins (plugins/*), offered by the shell as its default
+  # plugin source. Each is a Rust crate built against the plugin SDK
+  # (plugin-sdk/rust) and laid out like an installed plugin:
+  #   <id>/manifest.json
+  #   <id>/<manifest "exec">
+  mkPlugin = id:
+    rustPlatform.buildRustPackage {
+      pname = "caelestia-plugin-${id}";
+      version = (lib.importTOML ./../plugins/${id}/Cargo.toml).package.version;
+      # The crate depends on the SDK by relative path, so both are needed.
+      src = lib.fileset.toSource {
+        root = ./..;
+        fileset = lib.fileset.unions [./../plugin-sdk/rust ./../plugin-sdk/proto ./../plugins/${id}];
+      };
+      cargoRoot = "plugins/${id}";
+      buildAndTestSubdir = "plugins/${id}";
+      cargoLock.lockFile = ./../plugins/${id}/Cargo.lock;
+      # tonic-build (the SDK's build.rs) shells out to protoc.
+      nativeBuildInputs = [protobuf];
+
+      postInstall = ''
+        exec_rel=$(sed -n 's/.*"exec"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' plugins/${id}/manifest.json)
+        dest=$out/share/caelestia-shell/plugins/${id}
+        mkdir -p "$dest/$(dirname "$exec_rel")"
+        install -m644 plugins/${id}/manifest.json "$dest/manifest.json"
+        mv $out/bin/"$(basename "$exec_rel")" "$dest/$exec_rel"
+        rmdir $out/bin
+      '';
+    };
+
+  bundledPluginList = map mkPlugin ["pomodoro"];
+
+  # The directory CAELESTIA_BUNDLED_PLUGINS_DIR points at: one real copy per
+  # plugin (not symlinks, installing copies them into the user's data dir).
+  bundledPlugins = runCommand "caelestia-bundled-plugins" {} ''
+    mkdir -p $out
+    ${lib.concatMapStringsSep "\n" (p: "cp -r ${p}/share/caelestia-shell/plugins/* $out/") bundledPluginList}
+  '';
 
   runtimeDeps =
     [
@@ -113,7 +153,9 @@
       # from this .proto at build time (see plugin/cmake/grpc-proto.cmake) -
       # the rest of nix-backend-generic (the Rust crate) is built and
       # packaged separately, see nixBackendGeneric below.
-      fileset = lib.fileset.unions [./../CMakeLists.txt ./../plugin ./../nix-backend-generic/proto];
+      # plugin-sdk/proto is the plugin API Caelestia.Plugins (the host side)
+      # generates its gRPC bindings from.
+      fileset = lib.fileset.unions [./../CMakeLists.txt ./../plugin ./../nix-backend-generic/proto ./../plugin-sdk/proto];
     };
 
     nativeBuildInputs = [cmake ninja pkg-config];
@@ -187,6 +229,7 @@ in
       	--prefix PATH : "${lib.makeBinPath runtimeDeps}" \
       	--set FONTCONFIG_FILE "${fontconfig}" \
       	--set CAELESTIA_LIB_DIR ${extras}/lib \
+      	--set CAELESTIA_BUNDLED_PLUGINS_DIR ${bundledPlugins} \
         --set CAELESTIA_XKB_RULES_PATH ${xkeyboard-config}/share/xkeyboard-config-2/rules/base.lst \
       	--add-flags "-p $out/share/caelestia-shell"
 
@@ -195,7 +238,8 @@ in
     '';
 
     passthru = {
-      inherit plugin extras nixBackendGeneric;
+      inherit plugin extras nixBackendGeneric bundledPlugins;
+      plugins = lib.listToAttrs (map (p: lib.nameValuePair p.pname p) bundledPluginList);
     };
 
     meta = {

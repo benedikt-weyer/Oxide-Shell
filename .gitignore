@@ -7,3 +7,5 @@ logs
 nix-backend-generic/target/
 iron-polkit/target/
 target/
+plugin-sdk/rust/target/
+plugins/*/target/

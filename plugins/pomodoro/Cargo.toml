@@ -1,0 +1,18 @@
+[package]
+name = "caelestia-plugin-pomodoro"
+version = "0.1.0"
+edition = "2021"
+description = "First-party caelestia-shell plugin: a pomodoro timer on the dashboard"
+license = "GPL-3.0-only"
+
+[[bin]]
+name = "caelestia-plugin-pomodoro"
+path = "src/main.rs"
+
+[dependencies]
+caelestia-plugin-sdk = { path = "../../plugin-sdk/rust" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync"] }
+
+[profile.release]
+lto = true
+strip = true

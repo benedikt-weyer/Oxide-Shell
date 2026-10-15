@@ -1,0 +1,21 @@
+[package]
+name = "caelestia-plugin-sdk"
+version = "1.0.0"
+edition = "2021"
+description = "SDK for writing caelestia-shell plugins (API v1) in Rust"
+license = "GPL-3.0-only"
+
+[dependencies]
+tonic = "0.11"
+prost = "0.12"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "sync", "time"] }
+tokio-stream = { version = "0.1", features = ["net", "sync"] }
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+tonic-build = "0.11"
+
+[dev-dependencies]
+tower = "0.4"

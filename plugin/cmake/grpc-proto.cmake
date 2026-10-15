@@ -37,7 +37,9 @@ function(caelestia_add_grpc_proto target)
     )
 
     target_sources(${target} PRIVATE "${proto_srcs}" "${grpc_srcs}")
-    target_include_directories(${target} PRIVATE "${generated_dir}")
+    # SYSTEM: the generated headers (pulled in by hand-written sources) don't
+    # meet this project's warning bar either.
+    target_include_directories(${target} SYSTEM PRIVATE "${generated_dir}")
 
     # Generated code doesn't meet this project's own warning bar (and isn't
     # ours to fix), and can't usefully share a PCH built from hand-written

@@ -8,6 +8,7 @@ import Caelestia
 import Caelestia.Config
 import qs.components
 import qs.components.filedialog
+import qs.services
 
 Item {
     id: root
@@ -48,11 +49,26 @@ Item {
                 enabled: Config.dashboard.showNix
             }
         ];
-        return allTabs.filter(tab => tab.enabled);
+        // Plugin tabs always come last
+        const pluginTabs = Plugins.dashboardTabs.map(tab => ({
+                    component: pluginComponent,
+                    iconName: tab.iconName,
+                    text: tab.text,
+                    enabled: true,
+                    pluginId: tab.pluginId,
+                    viewId: tab.viewId
+                }));
+        return allTabs.filter(tab => tab.enabled).concat(pluginTabs);
     }
 
     readonly property real nonAnimWidth: view.implicitWidth + viewWrapper.anchors.margins * 2
     readonly property real nonAnimHeight: tabs.implicitHeight + tabs.anchors.topMargin + view.implicitHeight + viewWrapper.anchors.margins * 2
+
+    // A plugin tab can disappear (plugin disabled or removed) while selected
+    onDashboardTabsChanged: {
+        if (screenState.dashboardTab >= dashboardTabs.length)
+            screenState.dashboardTab = Math.max(0, dashboardTabs.length - 1);
+    }
 
     implicitWidth: nonAnimWidth
     implicitHeight: nonAnimHeight
@@ -147,6 +163,14 @@ Item {
 
                         sourceComponent: modelData.component
 
+                        // Plugin tabs share one component, so tell it which view to show
+                        onLoaded: {
+                            if (modelData.pluginId) {
+                                item.pluginId = modelData.pluginId;
+                                item.viewId = modelData.viewId;
+                            }
+                        }
+
                         Component.onCompleted: active = Qt.binding(() => {
                             if (index === view.currentIndex)
                                 return true;
@@ -191,6 +215,12 @@ Item {
                 id: nixComponent
 
                 NixTab {}
+            }
+
+            Component {
+                id: pluginComponent
+
+                PluginTab {}
             }
 
             Behavior on contentX {

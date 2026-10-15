@@ -67,6 +67,11 @@ if("plugin" IN_LIST ENABLE_MODULES)
     add_subdirectory(plugin)
 endif()
 
+# The C++ plugin SDK (plugin-sdk/cpp) is opt-in: only plugin authors need it.
+if("plugin-sdk-cpp" IN_LIST ENABLE_MODULES)
+    add_subdirectory(plugin-sdk/cpp)
+endif()
+
 if("shell" IN_LIST ENABLE_MODULES)
     foreach(dir assets components modules services utils)
         install(DIRECTORY ${dir} DESTINATION "${INSTALL_QSCONFDIR}")

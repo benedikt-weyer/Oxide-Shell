@@ -27,6 +27,10 @@ trap restart_unit EXIT
 
 cmake --build build
 
+# The first-party plugins (plugins/*) are the shell's default plugin source.
+"$repo_root/scripts/build-plugins.sh" "$repo_root/build/plugins"
+export CAELESTIA_BUNDLED_PLUGINS_DIR="$repo_root/build/plugins"
+
 export QML2_IMPORT_PATH="$repo_root/build/qml${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}"
 
 qs -n -p "$repo_root" "$@"

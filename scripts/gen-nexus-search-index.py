@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parent.parent / "modules" / "nexus"
 SKIP = {
     "NetworkDetailPage", "EthernetDetailPage", "BtDeviceInfo", "OutputDetailPage",
     "WallpaperCategory", "AppInfo", "AddNetworkPage", "AddVpnPage", "BluetoothPairing",
+    "PluginDetailPage", "PluginSettingsPage",
 }
 
 # Sub-pages that are only reachable through another sub-page: (page, sub) -> parent sub.

@@ -46,6 +46,11 @@ jobs:
       - name: Build flake
         run: nix build
 
+      # The first-party plugin is part of the default build (bundled); the
+      # C++ plugin SDK and its roundtrip test are built separately.
+      - name: Build plugin SDK (C++)
+        run: nix build .#plugin-sdk-cpp
+
   build-cpp:
     name: build-arch-${{ matrix.name }}
     runs-on: ubuntu-latest

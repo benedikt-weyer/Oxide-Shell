@@ -17,6 +17,7 @@ QtObject {
     property string selectedNetworkSsid
     property string selectedEthernetInterface
     property string selectedOutputName
+    property string selectedPluginId
     property bool networkDetailsFromSaved
 
     signal close
