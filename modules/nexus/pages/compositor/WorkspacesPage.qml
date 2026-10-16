@@ -55,11 +55,18 @@ PageBase {
         }
 
         ToggleRow {
-            last: true
             text: qsTr("On-screen overlay")
             subtext: qsTr("Flash workspace indicator dots on switch")
             checked: root.cfg?.workspaces.overlay ?? true
             onToggled: IronlandCtl.setValue("workspaces.overlay", checked ? "true" : "false")
+        }
+
+        ToggleRow {
+            last: true
+            text: qsTr("Keep disconnected monitors' windows")
+            subtext: qsTr("Unplugging a monitor, even the last one, hides its workspaces and windows instead of moving them; plugging it back in restores them")
+            checked: root.cfg?.workspaces.keep_disconnected ?? true
+            onToggled: IronlandCtl.setValue("workspaces.keep_disconnected", checked ? "true" : "false")
         }
     }
 }

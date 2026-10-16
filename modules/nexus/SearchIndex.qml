@@ -74,6 +74,7 @@ QtObject {
         {label: qsTr("Starting workspace count"), sub: "", path: "Compositor › Workspaces", page: 5, stack: [3]},
         {label: qsTr("Dynamic count"), sub: qsTr("Navigating or moving a window past the last workspace creates a new one; empty trailing workspaces are dropped automatically"), path: "Compositor › Workspaces", page: 5, stack: [3]},
         {label: qsTr("On-screen overlay"), sub: qsTr("Flash workspace indicator dots on switch"), path: "Compositor › Workspaces", page: 5, stack: [3]},
+        {label: qsTr("Keep disconnected monitors' windows"), sub: qsTr("Unplugging a monitor, even the last one, hides its workspaces and windows instead of moving them; plugging it back in restores them"), path: "Compositor › Workspaces", page: 5, stack: [3]},
         {label: qsTr("Focus follows mouse"), sub: qsTr("Focus whatever window the pointer is over, without needing a click"), path: "Compositor › Focus", page: 5, stack: [4]},
         {label: qsTr("Mouse follows focus"), sub: qsTr("Warp the pointer to a window whenever it's focused some other way (switching workspaces, cycling windows, a new window, the dock)"), path: "Compositor › Focus", page: 5, stack: [4]},
         {label: qsTr("Colour scheme"), sub: "", path: "Compositor › Appearance", page: 5, stack: [5]},
