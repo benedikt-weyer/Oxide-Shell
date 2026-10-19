@@ -185,9 +185,19 @@ ColumnLayout {
             DelegateChoice {
                 roleValue: "power"
                 delegate: EntryWrapper {
-                    Power {
-                        objectName: "taskbarPowerButton"
-                        screenState: root.screenState
+                    Column {
+                        spacing: Tokens.spacing.medium
+
+                        SidebarButton {
+                            objectName: "taskbarSidebarButton"
+                            visible: root.Config.bar.sidebarButton
+                            screenState: root.screenState
+                        }
+
+                        Power {
+                            objectName: "taskbarPowerButton"
+                            screenState: root.screenState
+                        }
                     }
                 }
             }

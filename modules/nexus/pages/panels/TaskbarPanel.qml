@@ -37,6 +37,13 @@ PageBase {
             onToggled: GlobalConfig.bar.showOnHover = checked
         }
 
+        ToggleRow {
+            text: qsTr("Sidebar button")
+            subtext: qsTr("Show a button in the bar that toggles the sidebar")
+            checked: Config.bar.sidebarButton
+            onToggled: GlobalConfig.bar.sidebarButton = checked
+        }
+
         StepperRow {
             last: true
             label: qsTr("Drag threshold")

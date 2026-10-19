@@ -412,6 +412,7 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "persistent": true,
         "showOnHover": true,
         "dragThreshold": 20,
+        "sidebarButton": true,
         "scrollActions": {
             "workspaces": true,
             "volume": true,
