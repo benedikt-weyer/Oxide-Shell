@@ -133,6 +133,9 @@ QtObject {
                 Component {
                     PerformancePage {}
                 }
+                Component {
+                    SessionPage {}
+                }
             }
         },
         Component {

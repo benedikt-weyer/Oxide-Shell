@@ -182,6 +182,7 @@ QtObject {
         {label: qsTr("Wallpapers"), sub: "", path: "Panels › Launcher", page: 7, stack: [3]},
         {label: qsTr("General"), sub: "", path: "Panels › Sidebar", page: 7, stack: [4]},
         {label: qsTr("Enabled"), sub: "", path: "Panels › Sidebar", page: 7, stack: [4]},
+        {label: qsTr("Show on hover"), sub: qsTr("Open the sidebar when the cursor reaches the top-right corner"), path: "Panels › Sidebar", page: 7, stack: [4]},
         {label: qsTr("Drag threshold"), sub: qsTr("Pixels dragged before the sidebar opens"), path: "Panels › Sidebar", page: 7, stack: [4]},
         {label: qsTr("General"), sub: "", path: "Panels › Utilities", page: 7, stack: [5]},
         {label: qsTr("Enabled"), sub: qsTr("Show the utilities panel"), path: "Panels › Utilities", page: 7, stack: [5]},

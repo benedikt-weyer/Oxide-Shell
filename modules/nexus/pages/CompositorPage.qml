@@ -56,11 +56,18 @@ PageBase {
         }
 
         NavRow {
-            last: true
             icon: "speed"
             text: qsTr("Performance")
             subtext: root.cfg?.performance.fps_overlay ? qsTr("FPS overlay on") : qsTr("FPS overlay off")
             onClicked: root.nState.openSubPage(6)
+        }
+
+        NavRow {
+            last: true
+            icon: "power_settings_new"
+            text: qsTr("Session")
+            subtext: root.cfg?.session.start_shell ? qsTr("Compositor starts %1").arg(root.cfg.session.shell_unit) : qsTr("Shell started externally")
+            onClicked: root.nState.openSubPage(7)
         }
     }
 }

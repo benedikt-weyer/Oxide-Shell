@@ -117,6 +117,22 @@ Singleton {
         run(["unset", key], result => finishEdit(result, callback));
     }
 
+    // The systemd --user services a shell could be started from, as an array
+    // of unit names, or `null` if they couldn't be listed.
+    function sessionUnits(callback: var): void {
+        run(["session", "units", "--json"], result => {
+            if (!result.success) {
+                callback?.(null);
+                return;
+            }
+            try {
+                callback?.(JSON.parse(result.output));
+            } catch (e) {
+                callback?.(null);
+            }
+        });
+    }
+
     function shortcutsEventsList(callback: var): void {
         run(["shortcuts", "events", "list", "--json"], result => {
             if (!result.success) {
