@@ -18,6 +18,23 @@ Item {
     readonly property int padding: Tokens.padding.large
     readonly property int rounding: Tokens.rounding.extraLarge
 
+    // Starts the highlighted app in a VM when Left (throw-away) or Right
+    // (persistent) is pressed. Only while the compositor can actually do
+    // that, and only for a plain key press on an app: otherwise the arrow
+    // keys keep moving the cursor in the search box as usual.
+    function launchVirtualFromKey(event: var, persistent: bool): void {
+        const item = list.currentList?.currentItem;
+        const plain = !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier | Qt.MetaModifier));
+        const onApps = !list.showWallpapers && !search.text.startsWith(GlobalConfig.launcher.actionPrefix);
+        if (!VmLauncher.usable || !plain || !onApps || !item) {
+            event.accepted = false;
+            return;
+        }
+
+        Apps.launchVirtual(item.modelData, persistent);
+        root.screenState.launcher = false;
+    }
+
     implicitWidth: listWrapper.width + padding * 2
     implicitHeight: search.height + listWrapper.height + padding + search.anchors.bottomMargin
 
@@ -79,6 +96,9 @@ Item {
                 }
             }
         }
+
+        Keys.onLeftPressed: event => root.launchVirtualFromKey(event, false)
+        Keys.onRightPressed: event => root.launchVirtualFromKey(event, true)
 
         Keys.onUpPressed: list.currentList?.decrementCurrentIndex()
         Keys.onDownPressed: list.currentList?.incrementCurrentIndex()

@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `plugin/protocols/ironland-shortcuts-v1.xml` — global shortcuts (replaces `Quickshell.Hyprland`'s `GlobalShortcut`)
 - `plugin/protocols/ironland-focus-grab-v1.xml` — focus grabbing
+- `plugin/protocols/ironland-vm-launch-v1.xml` — starting launcher apps in VMs (`services/VmLauncher.qml` over the `IronlandVmLauncher` plugin type; in the launcher Left = throw-away VM, Right = persistent VM, only while the compositor reports a guest image configured)
 - `ironland-workspaces` — an external helper binary (not in this repo) that speaks line-delimited JSON over stdin/stdout for `ext-workspace-v1` support (see `services/IronWorkspaces.qml`)
 
 Some Hyprland-specific services (`hyprdevices`, `hyprextras`, `services/Hypr.qml`) remain for features not yet ported or that are Hyprland-only; don't assume the whole codebase is compositor-agnostic.
@@ -87,7 +88,7 @@ Each subdirectory is its own `add_subdirectory` with its own `CMakeLists.txt`, a
 - `Services/` — native backends too heavy/low-level for pure QML: audio visualisation pipeline (`audiocollector` → `audioprovider`/`cavaprovider`/`beattracker`), `cpu`/`gpu`/`diskinfo` system stats, `hyprdevices`/`hyprextras` (Hyprland-only, legacy), lyrics fetching (`lyriccandidate`).
 - `Blobs/` — the animated blob shape shader effect (`blobgroup`/`blobrect`/`blobinvertedrect`/`blobshape`/`blobmaterial` + GLSL shaders in `shaders/`).
 - `Images/` — image caching/analysis (`cachingimageprovider`, `imagecacher`, `imageanalyser`, `iutils`).
-- `Wayland/` — native Wayland protocol clients: `ironlandshortcut` (global shortcuts) and `ironlandfocusgrab`, generated against the XML protocol specs in `plugin/protocols/` via `plugin/cmake/wayland-protocol.cmake`.
+- `Wayland/` — native Wayland protocol clients: `ironlandshortcut` (global shortcuts), `ironlandfocusgrab` and `ironlandvmlauncher` (VM launches; one child object per launch, deleted when it reports `failed`/`finished`), generated against the XML protocol specs in `plugin/protocols/` via `plugin/cmake/wayland-protocol.cmake`.
 - `Components/` — misc QML-exposed C++ items (`buttonrow`, `lazylistview`, `sparklineitem`, `visualiserbars`, `wavyline`, circular/linear indicator managers).
 - Build helpers live in `plugin/cmake/`: `qml-module.cmake` (the `qml_module()` helper used by every subdirectory's `CMakeLists.txt`), `pch.cmake` (precompiled headers — C bindings are excluded from PCH), `wayland-protocol.cmake`, `sensorslib.cmake`.
 

@@ -3,6 +3,7 @@ pragma Singleton
 import Quickshell
 import Caelestia.Config
 import Caelestia.Models
+import qs.services
 import qs.utils
 
 Searcher {
@@ -29,6 +30,13 @@ Searcher {
             command: loginShellWrap(command),
             workingDirectory: entry.workingDirectory
         });
+    }
+
+    // Runs the entry inside a virtual machine instead (see VmLauncher): a
+    // throw-away one, or with `persistent` one that keeps the app's state.
+    function launchVirtual(entry: DesktopEntry, persistent: bool): void {
+        appDb.incrementFrequency(entry.id);
+        VmLauncher.launch(entry, persistent);
     }
 
     function search(search: string): var {
