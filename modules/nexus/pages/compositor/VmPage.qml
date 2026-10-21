@@ -25,7 +25,7 @@ PageBase {
         StyledText {
             Layout.fillWidth: true
             Layout.bottomMargin: Tokens.spacing.small
-            text: qsTr("In the launcher, Left starts the selected app in a throw-away VM and Right in a persistent one that keeps its files and resumes quickly. Changes apply to the next VM launch.")
+            text: qsTr("In the launcher, Left opens the apps that start in a throw-away VM and Right the ones that start in a persistent VM, which keeps its files and resumes quickly. Changes apply to the next VM launch.")
             color: Colours.palette.m3onSurfaceVariant
             font: Tokens.font.label.small
             wrapMode: Text.WordWrap
@@ -33,19 +33,23 @@ PageBase {
 
         SectionHeader {
             first: true
+            text: qsTr("Programs")
+        }
+
+        InfoRow {
+            first: true
+            last: true
+            label: qsTr("Set up for VMs")
+            subtext: qsTr("Each runs in its own VM image with only that program installed. Add them under [vm.programs] in the compositor config or, on NixOS, services.ironland-compositor.vm.programs")
+            value: VmLauncher.programs.length > 0 ? VmLauncher.programs.join(", ") : qsTr("None")
+        }
+
+        SectionHeader {
             text: qsTr("Guest")
         }
 
         TextFieldRow {
             first: true
-            label: qsTr("Guest image")
-            subtext: VmLauncher.usable ? qsTr("Disk image the VMs boot from. Empty uses the system-provided one, if any") : qsTr("Not set up: no image is configured and the system doesn't provide one")
-            placeholderText: qsTr("/path/to/guest.qcow2")
-            value: root.vm?.image ?? ""
-            onEditingFinished: v => IronlandCtl.setValue("vm.image", v.trim())
-        }
-
-        TextFieldRow {
             last: true
             label: qsTr("Guest user")
             subtext: qsTr("Account the compositor logs in as inside the guest")

@@ -18,21 +18,30 @@ Item {
     readonly property int padding: Tokens.padding.large
     readonly property int rounding: Tokens.rounding.extraLarge
 
-    // Starts the highlighted app in a VM when Left (throw-away) or Right
-    // (persistent) is pressed. Only while the compositor can actually do
-    // that, and only for a plain key press on an app: otherwise the arrow
-    // keys keep moving the cursor in the search box as usual.
-    function launchVirtualFromKey(event: var, persistent: bool): void {
-        const item = list.currentList?.currentItem;
+    // The launcher's tabs, left to right: apps that start in a throw-away VM,
+    // all apps (the default), and apps that start in a persistent VM. The VM
+    // tabs list only the apps that have a VM set up, and exist only while
+    // there are any.
+    readonly property var tabs: ["vm", "apps", "persistent"]
+    readonly property bool hasVmTabs: VmLauncher.usable && VmLauncher.programs.length > 0
+    // Tabs apply to the app list only, not to wallpapers or `:` commands.
+    readonly property bool onApps: !list.showWallpapers && !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
+
+    property string tab: "apps"
+    readonly property string activeTab: hasVmTabs ? tab : "apps"
+
+    // Moves to the tab `delta` places to the right (negative: left) when Left
+    // or Right is pressed. Only for a plain key press on the app list while
+    // there are VM tabs: otherwise the arrow keys keep moving the cursor in
+    // the search box as usual.
+    function switchTabFromKey(event: var, delta: int): void {
         const plain = !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier | Qt.MetaModifier));
-        const onApps = !list.showWallpapers && !search.text.startsWith(GlobalConfig.launcher.actionPrefix);
-        if (!VmLauncher.usable || !plain || !onApps || !item) {
+        if (!hasVmTabs || !plain || !onApps) {
             event.accepted = false;
             return;
         }
 
-        Apps.launchVirtual(item.modelData, persistent);
-        root.screenState.launcher = false;
+        tab = tabs[CUtils.clamp(tabs.indexOf(activeTab) + delta, 0, tabs.length - 1)];
     }
 
     implicitWidth: listWrapper.width + padding * 2
@@ -61,15 +70,14 @@ Item {
         }
     }
 
-    // Key hints under the results, shown for apps only (not for wallpapers or
-    // `:` commands, where Left/Right keep their normal meaning). Says plainly
-    // when the VM keys can't work yet, like the compositor's own launcher.
+    // The tab strip and key hints under the results, shown for apps only (not
+    // for wallpapers or `:` commands, where Left/Right keep their normal
+    // meaning). Says plainly when no program is set up for VMs yet, like the
+    // compositor's own launcher.
     Item {
         id: hints
 
-        readonly property bool shown: !list.showWallpapers && !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
-
-        implicitHeight: shown ? hintText.implicitHeight + Tokens.spacing.small : 0
+        implicitHeight: root.onApps ? hintColumn.implicitHeight + Tokens.spacing.small : 0
 
         anchors.left: parent.left
         anchors.right: parent.right
@@ -77,17 +85,92 @@ Item {
         anchors.leftMargin: root.padding * 2
         anchors.rightMargin: root.padding * 2
 
-        StyledText {
-            id: hintText
+        Column {
+            id: hintColumn
 
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
-            visible: hints.shown
-            text: VmLauncher.usable ? qsTr("Enter: launch   ←: throw-away VM   →: persistent VM (keeps state)") : qsTr("Enter: launch   VM keys: not set up")
-            color: Colours.palette.m3outline
-            font: Tokens.font.label.small
-            elide: Text.ElideRight
+            visible: root.onApps
+            spacing: Tokens.spacing.small
+
+            Row {
+                spacing: Tokens.spacing.small
+                visible: root.hasVmTabs
+
+                Repeater {
+                    model: [
+                        {
+                            id: "vm",
+                            icon: "deployed_code",
+                            label: qsTr("VM")
+                        },
+                        {
+                            id: "apps",
+                            icon: "apps",
+                            label: qsTr("Apps")
+                        },
+                        {
+                            id: "persistent",
+                            icon: "save",
+                            label: qsTr("Persistent")
+                        }
+                    ]
+
+                    StyledRect {
+                        id: chip
+
+                        required property var modelData
+                        readonly property bool active: root.activeTab === modelData.id
+
+                        implicitWidth: chipRow.implicitWidth + Tokens.padding.large * 2
+                        implicitHeight: chipRow.implicitHeight + Tokens.padding.small * 2
+                        radius: Tokens.rounding.full
+                        color: active ? Colours.palette.m3secondaryContainer : "transparent"
+
+                        Row {
+                            id: chipRow
+
+                            anchors.centerIn: parent
+                            spacing: Tokens.spacing.small
+
+                            MaterialIcon {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: chip.modelData.icon
+                                color: chip.active ? Colours.palette.m3onSecondaryContainer : Colours.palette.m3outline
+                            }
+
+                            StyledText {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: chip.modelData.label
+                                font: Tokens.font.body.small
+                                color: chip.active ? Colours.palette.m3onSecondaryContainer : Colours.palette.m3outline
+                            }
+                        }
+                    }
+                }
+            }
+
+            StyledText {
+                id: hintText
+
+                width: parent.width
+                text: {
+                    if (!root.hasVmTabs)
+                        return qsTr("Enter: launch   VM tabs: no program set up");
+                    switch (root.activeTab) {
+                    case "vm":
+                        return qsTr("Enter: start in a throw-away VM   →: back to apps");
+                    case "persistent":
+                        return qsTr("Enter: start in a persistent VM (keeps state)   ←: back to apps");
+                    default:
+                        return qsTr("Enter: launch   ←: throw-away VMs   →: persistent VMs");
+                    }
+                }
+                color: Colours.palette.m3outline
+                font: Tokens.font.label.small
+                elide: Text.ElideRight
+            }
         }
     }
 
@@ -121,14 +204,17 @@ Item {
                     else
                         currentItem.modelData.onClicked(list.currentList);
                 } else {
-                    Apps.launch(currentItem.modelData);
+                    if (root.activeTab === "apps")
+                        Apps.launch(currentItem.modelData);
+                    else
+                        Apps.launchVirtual(currentItem.modelData, root.activeTab === "persistent");
                     root.screenState.launcher = false;
                 }
             }
         }
 
-        Keys.onLeftPressed: event => root.launchVirtualFromKey(event, false)
-        Keys.onRightPressed: event => root.launchVirtualFromKey(event, true)
+        Keys.onLeftPressed: event => root.switchTabFromKey(event, -1)
+        Keys.onRightPressed: event => root.switchTabFromKey(event, 1)
 
         Keys.onUpPressed: list.currentList?.decrementCurrentIndex()
         Keys.onDownPressed: list.currentList?.incrementCurrentIndex()
@@ -160,8 +246,10 @@ Item {
 
         Connections {
             function onLauncherChanged(): void {
-                if (!root.screenState.launcher)
+                if (!root.screenState.launcher) {
                     search.text = "";
+                    root.tab = "apps";
+                }
             }
 
             function onSessionChanged(): void {

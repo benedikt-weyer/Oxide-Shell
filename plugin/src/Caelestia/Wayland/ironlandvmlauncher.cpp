@@ -1,5 +1,7 @@
 #include "ironlandvmlauncher.hpp"
 
+#include <utility>
+
 namespace caelestia::wayland {
 
 namespace {
@@ -40,6 +42,11 @@ QString finishReasonName(uint32_t reason) {
     }
 }
 
+QString programId(const QString& entry) {
+    static const QString suffix = QStringLiteral(".desktop");
+    return entry.endsWith(suffix) ? entry.chopped(suffix.size()) : entry;
+}
+
 } // namespace
 
 IronlandVmLaunch::IronlandVmLaunch(IronlandVmLauncher* launcher, QString entry, bool persistent)
@@ -78,12 +85,17 @@ void IronlandVmLaunch::ironland_vm_launch_v1_finished(uint32_t reason) {
 }
 
 IronlandVmLauncher::IronlandVmLauncher(QObject* parent)
-    : QWaylandClientExtensionTemplate<IronlandVmLauncher>(1) {
+    : QWaylandClientExtensionTemplate<IronlandVmLauncher>(2) {
     setParent(parent);
     connect(this, &QWaylandClientExtension::activeChanged, this, [this]() {
         if (!isActive()) {
             // Compositor gone (or restarting): nothing is configured there.
             m_configured = false;
+            m_pendingPrograms.clear();
+            if (!m_programs.isEmpty()) {
+                m_programs.clear();
+                emit programsChanged();
+            }
         }
         emit availableChanged();
         updateUsable();
@@ -108,6 +120,10 @@ bool IronlandVmLauncher::usable() const {
     return isActive() && m_configured;
 }
 
+QStringList IronlandVmLauncher::programs() const {
+    return m_programs;
+}
+
 void IronlandVmLauncher::launch(const QString& entry, bool persistent) {
     if (!isActive()) {
         return;
@@ -124,6 +140,20 @@ void IronlandVmLauncher::ironland_vm_launcher_v1_availability(uint32_t configure
         emit configuredChanged();
     }
     updateUsable();
+}
+
+void IronlandVmLauncher::ironland_vm_launcher_v1_program(const QString& entry) {
+    m_pendingPrograms.append(programId(entry));
+}
+
+void IronlandVmLauncher::ironland_vm_launcher_v1_programs_done() {
+    // Each batch is the complete list, so it replaces the previous one.
+    QStringList programs = std::exchange(m_pendingPrograms, {});
+    programs.sort();
+    if (programs != m_programs) {
+        m_programs = std::move(programs);
+        emit programsChanged();
+    }
 }
 
 void IronlandVmLauncher::updateUsable() {

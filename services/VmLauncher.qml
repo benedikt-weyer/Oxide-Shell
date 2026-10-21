@@ -11,16 +11,27 @@ import Caelestia.Wayland
 // its windows appear on this desktop like any other, marked with a badge.
 //
 // Two flavours: a throw-away VM, and a persistent one that keeps the
-// application's disk and memory between launches. The compositor does the
-// work; this only asks, and turns its progress reports into toasts - VMs
-// take a few seconds to boot, so "starting" feedback matters.
+// application's disk and memory between launches. A VM runs exactly one
+// program, installed in its own image, so only the apps in `programs` can be
+// started this way. The compositor does the work; this only asks, and turns
+// its progress reports into toasts - VMs take a few seconds to boot, so
+// "starting" feedback matters.
 Singleton {
     id: root
 
     // Whether VM launching can work right now: the compositor offers the
-    // protocol and has a guest image configured. Offer the feature only
-    // while this is true.
+    // protocol and has at least one program set up for VMs. Offer the
+    // feature only while this is true.
     readonly property bool usable: launcher.usable
+
+    // Desktop entry ids (without ".desktop") that have a VM set up.
+    readonly property var programs: launcher.programs
+
+    // Whether `entry` can be started in a VM. Reads `programs`, so bindings
+    // using this update when the compositor's list changes.
+    function has(entry: DesktopEntry): bool {
+        return root.programs.indexOf(entry.id.replace(/\.desktop$/, "")) >= 0;
+    }
 
     // Runs `entry` in a VM: `persistent` keeps its state for next time.
     function launch(entry: DesktopEntry, persistent: bool): void {

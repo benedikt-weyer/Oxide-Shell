@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `plugin/protocols/ironland-shortcuts-v1.xml` — global shortcuts (replaces `Quickshell.Hyprland`'s `GlobalShortcut`)
 - `plugin/protocols/ironland-focus-grab-v1.xml` — focus grabbing
-- `plugin/protocols/ironland-vm-launch-v1.xml` — starting launcher apps in VMs (`services/VmLauncher.qml` over the `IronlandVmLauncher` plugin type; in the launcher Left = throw-away VM, Right = persistent VM, only while the compositor reports a guest image configured)
+- `plugin/protocols/ironland-vm-launch-v1.xml` — starting launcher apps in VMs (`services/VmLauncher.qml` over the `IronlandVmLauncher` plugin type; the launcher has tabs switched with Left/Right: VM (throw-away) | Apps | Persistent VM, the VM tabs listing only the apps the compositor reports as having a VM set up, one program per VM image: `VmLauncher.programs` from the protocol's v2 `program` events)
 - `ironland-workspaces` — an external helper binary (not in this repo) that speaks line-delimited JSON over stdin/stdout for `ext-workspace-v1` support (see `services/IronWorkspaces.qml`)
 
 Some Hyprland-specific services (`hyprdevices`, `hyprextras`, `services/Hypr.qml`) remain for features not yet ported or that are Hyprland-only; don't assume the whole codebase is compositor-agnostic.

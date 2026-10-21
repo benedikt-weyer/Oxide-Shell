@@ -13,10 +13,6 @@ Item {
     required property DesktopEntry modelData
     required property ScreenState screenState
 
-    // The key hint for starting this app in a VM, shown only on the
-    // highlighted entry and only while the compositor can do that.
-    readonly property bool showVmHint: ListView.isCurrentItem && VmLauncher.usable
-
     implicitHeight: Tokens.sizes.launcher.itemHeight
 
     anchors.left: parent?.left
@@ -51,7 +47,7 @@ Item {
             anchors.leftMargin: Tokens.spacing.medium
             anchors.verticalCenter: icon.verticalCenter
 
-            implicitWidth: parent.width - icon.width - favouriteIcon.width - (root.showVmHint ? vmHint.implicitWidth + Tokens.spacing.medium : 0)
+            implicitWidth: parent.width - icon.width - favouriteIcon.width
             implicitHeight: name.implicitHeight + comment.implicitHeight
 
             StyledText {
@@ -69,46 +65,9 @@ Item {
                 color: Colours.palette.m3outline
 
                 elide: Text.ElideRight
-                width: root.width - icon.width - favouriteIcon.width - Tokens.rounding.extraLargeIncreased - (root.showVmHint ? vmHint.implicitWidth + Tokens.spacing.medium : 0)
+                width: root.width - icon.width - favouriteIcon.width - Tokens.rounding.extraLargeIncreased
 
                 anchors.top: name.bottom
-            }
-        }
-
-        Row {
-            id: vmHint
-
-            visible: root.showVmHint
-            spacing: Tokens.spacing.small
-
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.right: favouriteIcon.left
-            anchors.rightMargin: Tokens.spacing.medium
-
-            MaterialIcon {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "chevron_left"
-                color: Colours.palette.m3outline
-            }
-
-            StyledText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("VM")
-                font: Tokens.font.body.small
-                color: Colours.palette.m3outline
-            }
-
-            MaterialIcon {
-                anchors.verticalCenter: parent.verticalCenter
-                text: "chevron_right"
-                color: Colours.palette.m3outline
-            }
-
-            StyledText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Persistent")
-                font: Tokens.font.body.small
-                color: Colours.palette.m3outline
             }
         }
 

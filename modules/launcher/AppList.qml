@@ -15,6 +15,9 @@ StyledListView {
 
     required property SearchBar search
     required property ScreenState screenState
+    // Which launcher tab is shown: "apps" lists everything, the VM tabs only
+    // the apps that have a VM set up.
+    required property string tab
 
     property string displayText
 
@@ -50,7 +53,7 @@ StyledListView {
         case "variant":
             return M3Variants.query(text);
         default:
-            return Apps.search(text);
+            return tab === "apps" ? Apps.search(text) : Apps.search(text).filter(entry => VmLauncher.has(entry));
         }
     }
 
