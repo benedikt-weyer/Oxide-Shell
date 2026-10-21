@@ -36,7 +36,7 @@ Item {
     }
 
     implicitWidth: listWrapper.width + padding * 2
-    implicitHeight: search.height + listWrapper.height + padding + search.anchors.bottomMargin
+    implicitHeight: search.height + hints.height + listWrapper.height + padding + search.anchors.bottomMargin
 
     Item {
         id: listWrapper
@@ -45,7 +45,7 @@ Item {
         implicitHeight: list.height + root.padding
 
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottom: search.top
+        anchors.bottom: hints.top
         anchors.bottomMargin: root.padding
 
         ContentList {
@@ -54,10 +54,40 @@ Item {
             content: root
             screenState: root.screenState
             panels: root.panels
-            maxHeight: root.maxHeight - search.implicitHeight - root.padding * 3
+            maxHeight: root.maxHeight - search.implicitHeight - hints.height - root.padding * 3
             search: search
             padding: root.padding
             rounding: root.rounding
+        }
+    }
+
+    // Key hints under the results, shown for apps only (not for wallpapers or
+    // `:` commands, where Left/Right keep their normal meaning). Says plainly
+    // when the VM keys can't work yet, like the compositor's own launcher.
+    Item {
+        id: hints
+
+        readonly property bool shown: !list.showWallpapers && !search.text.startsWith(GlobalConfig.launcher.actionPrefix)
+
+        implicitHeight: shown ? hintText.implicitHeight + Tokens.spacing.small : 0
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: search.top
+        anchors.leftMargin: root.padding * 2
+        anchors.rightMargin: root.padding * 2
+
+        StyledText {
+            id: hintText
+
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            visible: hints.shown
+            text: VmLauncher.usable ? qsTr("Enter: launch   ←: throw-away VM   →: persistent VM (keeps state)") : qsTr("Enter: launch   VM keys: not set up")
+            color: Colours.palette.m3outline
+            font: Tokens.font.label.small
+            elide: Text.ElideRight
         }
     }
 

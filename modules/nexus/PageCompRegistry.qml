@@ -136,6 +136,9 @@ QtObject {
                 Component {
                     SessionPage {}
                 }
+                Component {
+                    VmPage {}
+                }
             }
         },
         Component {

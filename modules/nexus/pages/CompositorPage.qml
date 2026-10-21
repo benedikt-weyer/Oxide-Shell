@@ -63,11 +63,18 @@ PageBase {
         }
 
         NavRow {
-            last: true
             icon: "power_settings_new"
             text: qsTr("Session")
             subtext: root.cfg?.session.start_shell ? qsTr("Compositor starts %1").arg(root.cfg.session.shell_unit) : qsTr("Shell started externally")
             onClicked: root.nState.openSubPage(7)
+        }
+
+        NavRow {
+            last: true
+            icon: "deployed_code"
+            text: qsTr("Virtual machines")
+            subtext: VmLauncher.usable ? qsTr("Launch apps in a VM from the launcher") : qsTr("Not set up")
+            onClicked: root.nState.openSubPage(8)
         }
     }
 }
