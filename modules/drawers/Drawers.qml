@@ -3,6 +3,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
 import qs.services
+import qs.modules.dock
 
 Variants {
     model: Screens.screens
@@ -22,6 +23,11 @@ Variants {
             id: content
 
             screen: scope.modelData
+        }
+
+        // After the drawers window, so it is stacked above it.
+        Dock {
+            targetScreen: scope.modelData
         }
     }
 }

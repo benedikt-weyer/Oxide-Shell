@@ -13,8 +13,20 @@ import qs.services
 import qs.utils
 import qs.modules.launcher.services
 
+// The dock of one screen. It is created by that screen's drawers scope (see
+// modules/drawers/Drawers.qml), right after the drawers window: both are on
+// the top layer, where layer-shell stacks surfaces in the order they were
+// mapped, and the full-screen drawers window paints the border band the dock
+// sits in. As a separate `Variants` over all screens the dock was mapped
+// before the drawers window whenever the screens were recreated (all
+// monitors disconnected and reconnected), and stayed hidden behind it until
+// the shell was restarted. Created from the same scope, the order is fixed.
 Variants {
-    model: Screens.screens.filter(s => GlobalConfig.forScreen(s.name).dock.enabled && !Strings.testRegexList(GlobalConfig.forScreen(s.name).dock.excludedScreens, s.name))
+    id: root
+
+    required property ShellScreen targetScreen
+
+    model: [root.targetScreen].filter(s => GlobalConfig.forScreen(s.name).dock.enabled && !Strings.testRegexList(GlobalConfig.forScreen(s.name).dock.excludedScreens, s.name))
 
     StyledWindow {
         id: win
