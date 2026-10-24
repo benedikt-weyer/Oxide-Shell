@@ -131,6 +131,15 @@ StyledRect {
                     }
                 }
                 DelegateChoice {
+                    roleValue: "cinemaMode"
+                    delegate: Toggle {
+                        icon: "movie"
+                        checked: CinemaMode.enabled
+                        enabled: CinemaMode.available
+                        onClicked: CinemaMode.toggle()
+                    }
+                }
+                DelegateChoice {
                     roleValue: "dnd"
                     delegate: Toggle {
                         icon: "notifications_off"

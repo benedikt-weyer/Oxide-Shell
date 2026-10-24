@@ -490,6 +490,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
                 "enabled": false
             },
             {
+                "id": "cinemaMode",
+                "enabled": true
+            },
+            {
                 "id": "network",
                 "enabled": true
             },
@@ -554,6 +558,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
         "thickness": 10,
         "rounding": 25,
         "smoothing": 20
+    },
+    "cinemaMode": {
+        "glow": false,
+        "glowStrength": 60
     },
     "dashboard": {
         "enabled": true,
@@ -819,6 +827,10 @@ For example, to automatically hide the bar on the monitor named `DP-1`:
             },
             {
                 "id": "gameMode",
+                "enabled": true
+            },
+            {
+                "id": "cinemaMode",
                 "enabled": true
             },
             {

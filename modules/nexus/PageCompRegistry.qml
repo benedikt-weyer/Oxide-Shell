@@ -54,6 +54,9 @@ QtObject {
                 Component {
                     NightModePage {}
                 }
+                Component {
+                    CinemaModePage {}
+                }
             }
         },
         Component {

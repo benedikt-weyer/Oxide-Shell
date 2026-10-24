@@ -9,6 +9,7 @@ PageBase {
 
     readonly property var builtinIcons: ({
             lockStatus: qsTr("Lock keys"),
+            cinemaMode: qsTr("Cinema mode"),
             kbLayout: qsTr("Keyboard layout"),
             audio: qsTr("Speakers"),
             microphone: qsTr("Microphone"),

@@ -202,6 +202,19 @@ PageBase {
         }
 
         SectionHeader {
+            text: qsTr("Focus")
+        }
+
+        NavRow {
+            first: true
+            last: true
+            icon: "movie"
+            text: qsTr("Cinema mode")
+            subtext: !CinemaMode.available ? qsTr("Not supported by the compositor") : CinemaMode.enabled ? (CinemaMode.glow ? qsTr("On, with glow") : qsTr("On")) : qsTr("Off")
+            onClicked: root.nState.openSubPage(3)
+        }
+
+        SectionHeader {
             text: qsTr("Add manually")
         }
 

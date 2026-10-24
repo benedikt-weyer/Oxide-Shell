@@ -139,6 +139,11 @@ Item {
             sourceComponent: LockStatus {}
         }
 
+        Popout {
+            name: "cinemamode"
+            sourceComponent: CinemaModePopout {}
+        }
+
         Repeater {
             model: ScriptModel {
                 values: SystemTray.items.values.filter(i => i.hasMenu && !GlobalConfig.bar.tray.hiddenIcons.includes(i.id))

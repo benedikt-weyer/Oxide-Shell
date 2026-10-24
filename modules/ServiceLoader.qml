@@ -9,6 +9,7 @@ Scope {
 
         IdleInhibitor;
         GameMode;
+        CinemaMode;
         NightMode;
         Notifs;
         Players;

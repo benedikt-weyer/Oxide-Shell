@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `plugin/protocols/ironland-shortcuts-v1.xml` — global shortcuts (replaces `Quickshell.Hyprland`'s `GlobalShortcut`)
 - `plugin/protocols/ironland-focus-grab-v1.xml` — focus grabbing
+- `plugin/protocols/ironland-cinema-mode-v1.xml` — cinema mode: darkens every screen but the one being worked on, optionally with a glow of the lit screen's border colours on the dark ones (`services/CinemaMode.qml` over the `IronlandCinemaMode` plugin type; a transient toggle in `PersistentProperties`, so it never comes back after a restart; the glow settings live in `Config.cinemaMode`; surfaces as the `cinemaMode` quick toggle in the utilities panel, as a status icon in the bar that only shows while it is on, and as a Displays settings page)
 - `plugin/protocols/ironland-vm-launch-v1.xml` — starting launcher apps in VMs (`services/VmLauncher.qml` over the `IronlandVmLauncher` plugin type; the launcher has tabs switched with Left/Right: VM (throw-away) | Apps | Persistent VM, the VM tabs listing only the apps the compositor reports as having a VM set up, one program per VM image: `VmLauncher.programs` from the protocol's v2 `program` events)
 - `ironland-workspaces` — an external helper binary (not in this repo) that speaks line-delimited JSON over stdin/stdout for `ext-workspace-v1` support (see `services/IronWorkspaces.qml`)
 

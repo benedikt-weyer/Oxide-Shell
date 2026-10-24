@@ -126,6 +126,14 @@ PageBase {
         }
 
         ToggleRow {
+            text: qsTr("Cinema mode")
+            subtext: qsTr("Darken every screen except one")
+            disabled: !Config.utilities.cards.quickToggles
+            checked: root.isToggleOn("cinemaMode")
+            onToggled: root.setToggleOn("cinemaMode", checked)
+        }
+
+        ToggleRow {
             text: qsTr("Do not disturb")
             subtext: qsTr("Silence notifications")
             disabled: !Config.utilities.cards.quickToggles
