@@ -25,7 +25,7 @@ PageBase {
         StyledText {
             Layout.fillWidth: true
             Layout.bottomMargin: Tokens.spacing.small
-            text: qsTr("In the launcher, Left opens the apps that start in a throw-away VM and Right the ones that start in a persistent VM, which keeps its files and resumes quickly. Changes apply to the next VM launch.")
+            text: qsTr("In the launcher, Left opens the apps that start in a throw-away VM and Right the ones that start in a persistent VM, which keeps its files and resumes quickly. Pressing the same arrow once more opens options for the app, such as which network the VM gets (online, only through Tor, or offline). Changes apply to the next VM launch.")
             color: Colours.palette.m3onSurfaceVariant
             font: Tokens.font.label.small
             wrapMode: Text.WordWrap

@@ -64,6 +64,9 @@ class IronlandVmLauncher : public QWaylandClientExtensionTemplate<IronlandVmLaun
     // The desktop entry ids (without ".desktop") that can be started in a VM;
     // anything else is refused. Updates live.
     Q_PROPERTY(QStringList programs READ programs NOTIFY programsChanged)
+    // Whether a launch can choose the VM's network mode (`launchWithNetwork`):
+    // the compositor speaks version 3 of the protocol. False on an older one.
+    Q_PROPERTY(bool supportsNetwork READ supportsNetwork NOTIFY availableChanged)
 
 public:
     explicit IronlandVmLauncher(QObject* parent = nullptr);
@@ -73,12 +76,21 @@ public:
     [[nodiscard]] bool configured() const;
     [[nodiscard]] bool usable() const;
     [[nodiscard]] QStringList programs() const;
+    [[nodiscard]] bool supportsNetwork() const;
 
     // Starts desktop entry `entry` (its id, with or without ".desktop") in a
     // VM: a throw-away one, or with `persistent` one that keeps the
     // application's disk and memory between launches. Does nothing if the
     // compositor doesn't offer the protocol.
     Q_INVOKABLE void launch(const QString& entry, bool persistent);
+
+    // Like `launch`, with the VM's network mode chosen: "online" (through the
+    // host's network), "tor" (only through a Tor client the compositor runs on
+    // the host) or "offline". For a persistent VM the mode also becomes the
+    // one its VM starts in from then on. Never starts a VM more connected
+    // than asked for: on a compositor without `supportsNetwork`, anything but
+    // "online" (and an unknown mode) is reported as `failed` ("other") instead.
+    Q_INVOKABLE void launchWithNetwork(const QString& entry, bool persistent, const QString& network);
 
 signals:
     void availableChanged();

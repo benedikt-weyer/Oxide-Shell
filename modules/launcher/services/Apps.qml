@@ -34,9 +34,10 @@ Searcher {
 
     // Runs the entry inside a virtual machine instead (see VmLauncher): a
     // throw-away one, or with `persistent` one that keeps the app's state.
-    function launchVirtual(entry: DesktopEntry, persistent: bool): void {
+    // `network` chooses its network mode; empty keeps the default.
+    function launchVirtual(entry: DesktopEntry, persistent: bool, network: string): void {
         appDb.incrementFrequency(entry.id);
-        VmLauncher.launch(entry, persistent);
+        VmLauncher.launch(entry, persistent, network);
     }
 
     function search(search: string): var {

@@ -85,7 +85,7 @@ void IronlandVmLaunch::ironland_vm_launch_v1_finished(uint32_t reason) {
 }
 
 IronlandVmLauncher::IronlandVmLauncher(QObject* parent)
-    : QWaylandClientExtensionTemplate<IronlandVmLauncher>(2) {
+    : QWaylandClientExtensionTemplate<IronlandVmLauncher>(3) {
     setParent(parent);
     connect(this, &QWaylandClientExtension::activeChanged, this, [this]() {
         if (!isActive()) {
@@ -122,6 +122,46 @@ bool IronlandVmLauncher::usable() const {
 
 QStringList IronlandVmLauncher::programs() const {
     return m_programs;
+}
+
+bool IronlandVmLauncher::supportsNetwork() const {
+    // `launch_with_network` arrived in version 3 of the protocol.
+    constexpr uint32_t sinceVersion = 3;
+    return isActive() && QtWayland::ironland_vm_launcher_v1::version() >= sinceVersion;
+}
+
+void IronlandVmLauncher::launchWithNetwork(const QString& entry, bool persistent, const QString& network) {
+    if (!isActive()) {
+        return;
+    }
+
+    uint32_t mode = 0;
+    if (network == QLatin1String("online")) {
+        mode = network_online;
+    } else if (network == QLatin1String("tor")) {
+        mode = network_tor;
+    } else if (network == QLatin1String("offline")) {
+        mode = network_offline;
+    } else {
+        emit failed(entry, persistent, QStringLiteral("other"), tr("Unknown network mode \"%1\"").arg(network));
+        return;
+    }
+
+    if (!supportsNetwork()) {
+        // An old compositor can only start the VM online (or as it was left):
+        // fine if that is what was asked for, refused otherwise.
+        if (mode == network_online) {
+            launch(entry, persistent);
+        } else {
+            emit failed(entry, persistent, QStringLiteral("other"),
+                tr("The compositor can't choose a VM's network mode; update it"));
+        }
+        return;
+    }
+
+    auto* launch = new IronlandVmLaunch(this, entry, persistent);
+    launch->init(
+        ironland_vm_launcher_v1::launch_with_network(entry, persistent ? mode_persistent : mode_throwaway, mode));
 }
 
 void IronlandVmLauncher::launch(const QString& entry, bool persistent) {

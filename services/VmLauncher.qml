@@ -27,6 +27,10 @@ Singleton {
     // Desktop entry ids (without ".desktop") that have a VM set up.
     readonly property var programs: launcher.programs
 
+    // Whether a launch can choose the VM's network mode (see `launch`): the
+    // compositor is new enough. Offer the choice only while this is true.
+    readonly property bool canChooseNetwork: launcher.supportsNetwork
+
     // Whether `entry` can be started in a VM. Reads `programs`, so bindings
     // using this update when the compositor's list changes.
     function has(entry: DesktopEntry): bool {
@@ -34,8 +38,15 @@ Singleton {
     }
 
     // Runs `entry` in a VM: `persistent` keeps its state for next time.
-    function launch(entry: DesktopEntry, persistent: bool): void {
-        launcher.launch(entry.id, persistent);
+    // `network` is the VM's network mode - "online", "tor" (only through a Tor
+    // client the compositor runs on the host) or "offline" - and, for a
+    // persistent VM, the mode it starts in from then on. Empty leaves it to
+    // the compositor: online, or the mode a persistent VM was last left in.
+    function launch(entry: DesktopEntry, persistent: bool, network: string): void {
+        if (network === "")
+            launcher.launch(entry.id, persistent);
+        else
+            launcher.launchWithNetwork(entry.id, persistent, network);
     }
 
     function appName(entryId: string): string {

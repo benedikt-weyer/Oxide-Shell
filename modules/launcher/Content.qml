@@ -30,10 +30,41 @@ Item {
     property string tab: "apps"
     readonly property string activeTab: hasVmTabs ? tab : "apps"
 
+    // What a VM's network can be, chosen in the options one more Left/Right
+    // press past the VM tabs opens. "online" is the first and the default.
+    readonly property var networks: [
+        {
+            id: "online",
+            icon: "public",
+            label: qsTr("Online"),
+            note: qsTr("Through your network")
+        },
+        {
+            id: "tor",
+            icon: "vpn_lock",
+            label: qsTr("Tor"),
+            note: qsTr("Only through Tor, which runs on this computer outside the VM")
+        },
+        {
+            id: "offline",
+            icon: "wifi_off",
+            label: qsTr("Offline"),
+            note: qsTr("No network at all")
+        }
+    ]
+    // Whether the options for the highlighted app are open instead of the
+    // tabs, and the network chosen in them.
+    property bool customizing: false
+    property string network: "online"
+    readonly property var networkInfo: networks.find(n => n.id === network)
+    readonly property string highlightedName: list.currentList?.currentItem?.modelData?.name ?? ""
+
     // Moves to the tab `delta` places to the right (negative: left) when Left
-    // or Right is pressed. Only for a plain key press on the app list while
-    // there are VM tabs: otherwise the arrow keys keep moving the cursor in
-    // the search box as usual.
+    // or Right is pressed. Pressing it once more at the last VM tab opens the
+    // options for the app to launch there (where Left/Right then choose the
+    // network). Only for a plain key press on the app list while there are VM
+    // tabs: otherwise the arrow keys keep moving the cursor in the search box
+    // as usual.
     function switchTabFromKey(event: var, delta: int): void {
         const plain = !(event.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.ShiftModifier | Qt.MetaModifier));
         if (!hasVmTabs || !plain || !onApps) {
@@ -41,7 +72,29 @@ Item {
             return;
         }
 
-        tab = tabs[CUtils.clamp(tabs.indexOf(activeTab) + delta, 0, tabs.length - 1)];
+        if (customizing) {
+            network = networks[CUtils.clamp(networks.findIndex(n => n.id === network) + delta, 0, networks.length - 1)].id;
+            return;
+        }
+
+        const target = tabs.indexOf(activeTab) + delta;
+        if (target >= 0 && target < tabs.length)
+            tab = tabs[target];
+        else if (activeTab !== "apps" && VmLauncher.canChooseNetwork)
+            customizing = true;
+    }
+
+    // Starts the highlighted app in the VM the tab stands for, with the
+    // network chosen in the options if they are open.
+    function launchVirtual(entry: var): void {
+        Apps.launchVirtual(entry, activeTab === "persistent", customizing ? network : "");
+        screenState.launcher = false;
+    }
+
+    onActiveTabChanged: customizing = false
+    onOnAppsChanged: {
+        if (!onApps)
+            customizing = false;
     }
 
     implicitWidth: listWrapper.width + padding * 2
@@ -96,7 +149,7 @@ Item {
 
             Row {
                 spacing: Tokens.spacing.small
-                visible: root.hasVmTabs
+                visible: root.hasVmTabs && !root.customizing
 
                 Repeater {
                     model: [
@@ -117,38 +170,48 @@ Item {
                         }
                     ]
 
-                    StyledRect {
-                        id: chip
-
+                    OptionChip {
                         required property var modelData
-                        readonly property bool active: root.activeTab === modelData.id
 
-                        implicitWidth: chipRow.implicitWidth + Tokens.padding.large * 2
-                        implicitHeight: chipRow.implicitHeight + Tokens.padding.small * 2
-                        radius: Tokens.rounding.full
-                        color: active ? Colours.palette.m3secondaryContainer : "transparent"
-
-                        Row {
-                            id: chipRow
-
-                            anchors.centerIn: parent
-                            spacing: Tokens.spacing.small
-
-                            MaterialIcon {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: chip.modelData.icon
-                                color: chip.active ? Colours.palette.m3onSecondaryContainer : Colours.palette.m3outline
-                            }
-
-                            StyledText {
-                                anchors.verticalCenter: parent.verticalCenter
-                                text: chip.modelData.label
-                                font: Tokens.font.body.small
-                                color: chip.active ? Colours.palette.m3onSecondaryContainer : Colours.palette.m3outline
-                            }
-                        }
+                        icon: modelData.icon
+                        label: modelData.label
+                        active: root.activeTab === modelData.id
                     }
                 }
+            }
+
+            StyledText {
+                width: parent.width
+                visible: root.customizing
+                text: qsTr("%1 in a %2 VM").arg(root.highlightedName).arg(root.activeTab === "persistent" ? qsTr("persistent") : qsTr("throw-away"))
+                font: Tokens.font.body.small
+                elide: Text.ElideRight
+            }
+
+            Row {
+                spacing: Tokens.spacing.small
+                visible: root.customizing
+
+                Repeater {
+                    model: root.networks
+
+                    OptionChip {
+                        required property var modelData
+
+                        icon: modelData.icon
+                        label: modelData.label
+                        active: root.network === modelData.id
+                    }
+                }
+            }
+
+            StyledText {
+                width: parent.width
+                visible: root.customizing
+                text: root.networkInfo?.note ?? ""
+                color: Colours.palette.m3outline
+                font: Tokens.font.label.small
+                elide: Text.ElideRight
             }
 
             StyledText {
@@ -158,11 +221,14 @@ Item {
                 text: {
                     if (!root.hasVmTabs)
                         return qsTr("Enter: launch   VM tabs: no program set up");
+                    if (root.customizing)
+                        return qsTr("Enter: start with this network   ←/→: choose   Esc: back");
+                    const more = VmLauncher.canChooseNetwork ? qsTr("   %1: options") : "";
                     switch (root.activeTab) {
                     case "vm":
-                        return qsTr("Enter: start in a throw-away VM   →: back to apps");
+                        return qsTr("Enter: start in a throw-away VM   →: back to apps") + more.arg("←");
                     case "persistent":
-                        return qsTr("Enter: start in a persistent VM (keeps state)   ←: back to apps");
+                        return qsTr("Enter: start in a persistent VM (keeps state)   ←: back to apps") + more.arg("→");
                     default:
                         return qsTr("Enter: launch   ←: throw-away VMs   →: persistent VMs");
                     }
@@ -204,11 +270,12 @@ Item {
                     else
                         currentItem.modelData.onClicked(list.currentList);
                 } else {
-                    if (root.activeTab === "apps")
+                    if (root.activeTab === "apps") {
                         Apps.launch(currentItem.modelData);
-                    else
-                        Apps.launchVirtual(currentItem.modelData, root.activeTab === "persistent");
-                    root.screenState.launcher = false;
+                        root.screenState.launcher = false;
+                    } else {
+                        root.launchVirtual(currentItem.modelData);
+                    }
                 }
             }
         }
@@ -219,7 +286,13 @@ Item {
         Keys.onUpPressed: list.currentList?.decrementCurrentIndex()
         Keys.onDownPressed: list.currentList?.incrementCurrentIndex()
 
-        Keys.onEscapePressed: root.screenState.launcher = false
+        Keys.onEscapePressed: {
+            // The options close first; the launcher itself with the next press.
+            if (root.customizing)
+                root.customizing = false;
+            else
+                root.screenState.launcher = false;
+        }
 
         Keys.onPressed: event => {
             if (!GlobalConfig.launcher.vimKeybinds)
@@ -249,6 +322,8 @@ Item {
                 if (!root.screenState.launcher) {
                     search.text = "";
                     root.tab = "apps";
+                    root.customizing = false;
+                    root.network = "online";
                 }
             }
 
