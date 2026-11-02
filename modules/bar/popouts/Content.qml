@@ -141,7 +141,9 @@ Item {
 
         Popout {
             name: "cinemamode"
-            sourceComponent: CinemaModePopout {}
+            sourceComponent: CinemaModePopout {
+                popouts: root.popouts
+            }
         }
 
         Repeater {

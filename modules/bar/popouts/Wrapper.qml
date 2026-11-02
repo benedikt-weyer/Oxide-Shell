@@ -33,6 +33,16 @@ Item {
     property string detachedMode
     property string queuedMode
 
+    // Where the detached Nexus opens for the modes that go further than a
+    // top-level page: the page, and the sub-pages to walk down on it (the
+    // same numbers as the entries of modules/nexus/SearchIndex.qml).
+    readonly property var detachTargets: ({
+            cinema: {
+                page: 1,
+                stack: [3]
+            }
+        })
+
     // Dummy object so Tokens attached prop resolves to global config
     // Anim configs are not per-monitor
     readonly property QtObject dummy: QtObject {}
@@ -146,8 +156,13 @@ Item {
                 anchors.fill: parent
                 nState.screen: root.screen
                 nState.animatingContainer: nexus.opacity < 1
-                nState.currentPageIdx: ["appearance", "network", "bluetooth", "audio"].indexOf(root.queuedMode)
+                nState.currentPageIdx: root.detachTargets[root.queuedMode]?.page ?? ["appearance", "network", "bluetooth", "audio"].indexOf(root.queuedMode)
                 onClose: root.close()
+
+                Component.onCompleted: {
+                    for (const sub of root.detachTargets[root.queuedMode]?.stack ?? [])
+                        nState.openSubPage(sub);
+                }
             }
         }
     }
