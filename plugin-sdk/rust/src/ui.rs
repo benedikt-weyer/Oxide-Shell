@@ -21,6 +21,22 @@ pub use crate::proto::{
 #[derive(Clone, Debug)]
 pub struct Node(pub proto::Node);
 
+impl Node {
+    /// Names the node among its siblings (API 1.2). A node whose key is the
+    /// same in the next view keeps its widget, so a [`text_input`] keeps its
+    /// text and focus and a [`scroll`] its position while the rest changes.
+    /// Nodes without a key are matched by position.
+    pub fn key(mut self, key: impl Into<String>) -> Self {
+        self.0.key = key.into();
+        self
+    }
+}
+
+/// Shorthand for `Node::from(node).key(key)`, usable on any builder.
+pub fn keyed(key: impl Into<String>, node: impl Into<Node>) -> Node {
+    node.into().key(key)
+}
+
 impl From<Node> for proto::Node {
     fn from(n: Node) -> Self {
         n.0
@@ -34,6 +50,7 @@ macro_rules! into_node {
                 #[allow(clippy::redundant_closure_call)]
                 Node(proto::Node {
                     kind: Some(proto::node::Kind::$variant(($inner)(w))),
+                    key: String::new(),
                 })
             }
         }
@@ -135,7 +152,10 @@ impl From<Container> for Node {
         } else {
             proto::node::Kind::Row(b.inner)
         };
-        Node(proto::Node { kind: Some(kind) })
+        Node(proto::Node {
+            kind: Some(kind),
+            key: String::new(),
+        })
     }
 }
 
@@ -305,12 +325,14 @@ into_node!(Button, Button, |w: Button| w.0);
 pub fn spacer(size: f64) -> Node {
     Node(proto::Node {
         kind: Some(proto::node::Kind::Spacer(proto::Spacer { size })),
+        key: String::new(),
     })
 }
 
 pub fn divider() -> Node {
     Node(proto::Node {
         kind: Some(proto::node::Kind::Divider(proto::Divider {})),
+        key: String::new(),
     })
 }
 
@@ -361,6 +383,195 @@ impl LogView {
     }
 }
 into_node!(LogView, LogView, |w: LogView| w.0);
+
+#[derive(Clone, Debug)]
+pub struct Markdown(proto::Markdown);
+
+/// Text with Markdown formatting, selectable (API 1.2).
+pub fn markdown(text: impl Into<String>) -> Markdown {
+    Markdown(proto::Markdown {
+        text: text.into(),
+        ..Default::default()
+    })
+}
+
+impl Markdown {
+    pub fn tone(mut self, tone: Tone) -> Self {
+        self.0.set_tone(tone);
+        self
+    }
+}
+into_node!(Markdown, Markdown, |w: Markdown| w.0);
+
+#[derive(Clone, Debug)]
+pub struct TextInput(proto::TextInput);
+
+/// A text field. Enter (and the submit button) deliver the text to
+/// [`Plugin::action`](crate::Plugin::action) as the payload of `action_id`
+/// and empty the field; it is only ever changed from the plugin by
+/// [`reset_token`](TextInput::reset_token) (API 1.2).
+pub fn text_input(action_id: impl Into<String>) -> TextInput {
+    TextInput(proto::TextInput {
+        action_id: action_id.into(),
+        ..Default::default()
+    })
+}
+
+impl TextInput {
+    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+        self.0.placeholder = placeholder.into();
+        self
+    }
+
+    /// What the field holds initially and after the reset token changed.
+    pub fn value(mut self, value: impl Into<String>) -> Self {
+        self.0.value = value.into();
+        self
+    }
+
+    /// Setting this to a different string than in the previous view sets the
+    /// field back to its [`value`](Self::value).
+    pub fn reset_token(mut self, token: impl Into<String>) -> Self {
+        self.0.reset_token = token.into();
+        self
+    }
+
+    /// Several lines; Shift+Enter inserts a line break.
+    pub fn multiline(mut self) -> Self {
+        self.0.multiline = true;
+        self
+    }
+
+    /// Lines the field grows to before it scrolls.
+    pub fn max_lines(mut self, lines: u32) -> Self {
+        self.0.max_lines = lines;
+        self
+    }
+
+    /// Material Symbols icon of a submit button inside the field.
+    pub fn submit_icon(mut self, icon: impl Into<String>) -> Self {
+        self.0.submit_icon = icon.into();
+        self
+    }
+
+    /// Submitting does nothing while set; typing still works.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.0.disabled = disabled;
+        self
+    }
+
+    /// Takes keyboard focus when it appears.
+    pub fn autofocus(mut self) -> Self {
+        self.0.autofocus = true;
+        self
+    }
+}
+into_node!(TextInput, TextInput, |w: TextInput| w.0);
+
+#[derive(Clone, Debug)]
+pub struct Select(proto::Select);
+
+/// A chip that opens a list of options; the picked value is delivered to
+/// [`Plugin::action`](crate::Plugin::action) as the payload of `action_id`
+/// (API 1.2).
+pub fn select(action_id: impl Into<String>, selected: impl Into<String>) -> Select {
+    Select(proto::Select {
+        action_id: action_id.into(),
+        selected: selected.into(),
+        ..Default::default()
+    })
+}
+
+impl Select {
+    pub fn icon(mut self, icon: impl Into<String>) -> Self {
+        self.0.icon = icon.into();
+        self
+    }
+
+    /// Shown while no option is selected.
+    pub fn placeholder(mut self, placeholder: impl Into<String>) -> Self {
+        self.0.placeholder = placeholder.into();
+        self
+    }
+
+    /// Heading of the list.
+    pub fn title(mut self, title: impl Into<String>) -> Self {
+        self.0.title = title.into();
+        self
+    }
+
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.0.disabled = disabled;
+        self
+    }
+
+    pub fn option(mut self, value: impl Into<String>, label: impl Into<String>) -> Self {
+        self.0.options.push(proto::SelectOption {
+            value: value.into(),
+            label: label.into(),
+            ..Default::default()
+        });
+        self
+    }
+
+    /// An option with an icon and a second line.
+    pub fn option_full(
+        mut self,
+        value: impl Into<String>,
+        label: impl Into<String>,
+        icon: impl Into<String>,
+        description: impl Into<String>,
+    ) -> Self {
+        self.0.options.push(proto::SelectOption {
+            value: value.into(),
+            label: label.into(),
+            icon: icon.into(),
+            description: description.into(),
+        });
+        self
+    }
+}
+into_node!(Select, Select, |w: Select| w.0);
+
+#[derive(Clone, Debug)]
+pub struct Scroll(proto::Scroll);
+
+/// Scrolls `child` vertically (API 1.2).
+pub fn scroll(child: impl Into<Node>) -> Scroll {
+    Scroll(proto::Scroll {
+        child: Some(Box::new(child.into().0)),
+        ..Default::default()
+    })
+}
+
+impl Scroll {
+    /// Height in px; without it (and without [`expand`](Self::expand)) as high as the child.
+    pub fn height(mut self, height: f64) -> Self {
+        self.0.height = height;
+        self
+    }
+
+    /// Takes the remaining height of the parent column.
+    pub fn expand(mut self) -> Self {
+        self.0.expand = true;
+        self
+    }
+
+    /// Follows the end while the child grows, until the user scrolls up.
+    pub fn stick_to_end(mut self) -> Self {
+        self.0.stick_to_end = true;
+        self
+    }
+}
+impl From<Scroll> for Node {
+    fn from(w: Scroll) -> Node {
+        // The variant is boxed: a scroll area contains a node.
+        Node(proto::Node {
+            kind: Some(proto::node::Kind::Scroll(Box::new(w.0))),
+            key: String::new(),
+        })
+    }
+}
 
 /// A toast the shell shows on the plugin's behalf, see [`Context::notify`](crate::Context::notify).
 #[derive(Clone, Debug, Default)]

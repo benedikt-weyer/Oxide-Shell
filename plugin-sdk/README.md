@@ -5,6 +5,8 @@ program that talks to the shell over gRPC (on a unix socket) and can
 
 - add a **tab to the dashboard**, described declaratively (the shell draws it,
   so it always matches the theme),
+- add a **button to the bar** (next to the notifications button) that opens a
+  **panel** drawn from a view of its own (API 1.2),
 - get a **settings page in Nexus** generated from a schema it declares,
 - show **toasts**.
 
@@ -19,7 +21,9 @@ plugin-sdk/
   rust/                          caelestia-plugin-sdk   (crate)
   cpp/                           Caelestia::PluginSdk    (CMake library) + example + test
 plugins/
-  pomodoro/                      first-party plugin (Rust)
+  pomodoro/                      first-party plugin (Rust): a timer on the dashboard
+  nix/                           first-party plugin (Rust): flake update / rebuild on the dashboard
+  ai/                            first-party plugin (Rust): AI chat in a bar panel
 plugin/src/Caelestia/Plugins/    the shell side (import Caelestia.Plugins)
 ```
 
@@ -220,8 +224,38 @@ disable that warning for plugin code.
 | `divider`  | thin line                                                                     |
 | `spinner`  | 1.1: small animated activity indicator, `size`                                |
 | `log_view` | 1.1: scrolling monospace `lines` (`text`, `is_error`), `height`, `placeholder`; follows the newest line |
+| `markdown` | 1.2: Markdown `text` (selectable, links open), tone |
+| `text_input` | 1.2: a text field. Enter / the submit button send the text as the payload of `action_id` and empty the field; the plugin only changes it through `reset_token`. `placeholder`, `multiline` (Shift+Enter = line break), `max_lines`, `submit_icon`, `disabled`, `autofocus` |
+| `select` | 1.2: a chip that opens a scrolling list of `options` (`value`, `label`, `icon`, `description`); the picked value is the payload of `action_id`. `selected`, `icon`, `placeholder`, `title`, `disabled` |
+| `scroll` | 1.2: scrolls its `child` vertically. `height` px, or `expand` to take the rest of the parent column; `stick_to_end` follows new content until the user scrolls up |
 
 Tones: default, primary, secondary, tertiary, muted, error.
+
+### Keys (API 1.2)
+
+A view update replaces the whole tree, but the shell matches the nodes of the
+new tree to the old one and only updates the widgets that changed. Nodes are
+matched by `Node.key` among their siblings (by position when it is empty), so
+give a key to everything that has state of its own or whose position can change
+(a list of messages, a text field, a scroll area). That is what keeps what the
+user is typing and where they scrolled to while a view is pushed ten times a
+second. `ui::keyed("name", widget)` sets it on any builder.
+
+## Panels (API 1.2)
+
+```rust
+PluginInfo::new(env!("CARGO_PKG_VERSION"))
+    .panel(Panel::new("chat", "AI chat", "auto_awesome"))
+```
+
+adds a button with that icon to the bar, next to the notifications button
+(switch them all off with `bar.pluginButtons`). It opens a panel at the top of
+the screen with a header drawn by the shell (title, a button for the plugin's
+settings page, a close button) and the view `chat` below it. The view is
+fetched with `Plugin::view` like a dashboard tab's, pushed with
+`Context::push_view`, and its root column is as big as the panel, so a
+`scroll(..).expand()` in it reaches the bottom. Button, `text_input` and
+`select` report through `Plugin::action`.
 
 ## Settings schema
 
@@ -231,17 +265,22 @@ values (defaults filled in, numbers clamped to their range) through
 `ApplySettings`. Because the shell caches the schema, the settings page also
 works while the plugin is stopped; edits are applied at the next start.
 
+A text field can be `secret` (1.2): shown as dots while typing, for API keys.
+The value is still stored as plain text in
+`~/.config/caelestia/plugins/<id>/settings.json`, so keep that file private.
+
 ## Testing
 
 ```sh
 cargo test --manifest-path plugin-sdk/rust/Cargo.toml          # SDK against a real server
 cargo test --manifest-path plugins/pomodoro/Cargo.toml         # timer logic
 cargo test --manifest-path plugins/nix/Cargo.toml              # build/rebuild state and view
+cargo test --manifest-path plugins/ai/Cargo.toml               # providers, chat state, view, and streaming against a fake server
 cmake -S plugin-sdk/cpp -B /tmp/sdk && cmake --build /tmp/sdk && ctest --test-dir /tmp/sdk
 scripts/build-plugins.sh                                       # fills build/plugins
 cmake -B build -DCAELESTIA_BUILD_PLUGIN_TESTS=ON && cmake --build build
 ctest --test-dir build/plugin/src/Caelestia/Plugins            # shell side, real pomodoro binary
 ```
 
-`nix build .#plugin-pomodoro .#plugin-nix` and `nix build .#plugin-sdk-cpp` run the same
+`nix build .#plugin-pomodoro .#plugin-nix .#plugin-ai` and `nix build .#plugin-sdk-cpp` run the same
 unit tests inside the sandbox.

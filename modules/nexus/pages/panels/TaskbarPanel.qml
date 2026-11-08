@@ -44,6 +44,13 @@ PageBase {
             onToggled: GlobalConfig.bar.sidebarButton = checked
         }
 
+        ToggleRow {
+            text: qsTr("Plugin buttons")
+            subtext: qsTr("Show the buttons that plugins add to the bar, next to the sidebar button")
+            checked: Config.bar.pluginButtons
+            onToggled: GlobalConfig.bar.pluginButtons = checked
+        }
+
         StepperRow {
             last: true
             label: qsTr("Drag threshold")

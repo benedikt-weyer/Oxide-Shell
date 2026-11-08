@@ -45,12 +45,17 @@ QVariant readJson(const QString& path) {
     return QJsonDocument::fromJson(file.readAll()).toVariant();
 }
 
-bool writeJson(const QString& path, const QVariant& value) {
+// `ownerOnly` for files that may hold secrets (API keys in a plugin's settings): the
+// permissions are set before anything is written, so the content is never readable by others.
+bool writeJson(const QString& path, const QVariant& value, bool ownerOnly = false) {
     QDir().mkpath(QFileInfo(path).absolutePath());
     QFile file(path);
     // Atomic replace: a crash mid-write must not wipe the user's settings.
     if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
         return false;
+    }
+    if (ownerOnly) {
+        file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner);
     }
     file.write(QJsonDocument::fromVariant(value).toJson(QJsonDocument::Indented));
     return file.flush();
@@ -313,13 +318,15 @@ void PluginManager::createHost(Plugin& plugin) {
             // Tabs/views of a plugin that went away are gone with it.
             it->views.clear();
             it->tabs.clear();
+            it->panels.clear();
             rebuildTabs();
         }
         rebuildInstalled();
     });
     connect(plugin.host, &PluginHost::handshaken, this,
-        [this, id](const QString& version, const QVariantList& tabs, const QVariantList& schema) {
-            onHandshaken(id, version, tabs, schema);
+        [this, id](
+            const QString& version, const QVariantList& tabs, const QVariantList& panels, const QVariantList& schema) {
+            onHandshaken(id, version, tabs, panels, schema);
         });
     connect(plugin.host, &PluginHost::viewUpdated, this, [this, id](const QString& viewId, const QVariantMap& tree) {
         auto it = m_plugins.find(id);
@@ -350,10 +357,11 @@ void PluginManager::destroyHost(Plugin& plugin) {
     }
     plugin.views.clear();
     plugin.tabs.clear();
+    plugin.panels.clear();
 }
 
-void PluginManager::onHandshaken(
-    const QString& id, const QString& version, const QVariantList& tabs, const QVariantList& schema) {
+void PluginManager::onHandshaken(const QString& id, const QString& version, const QVariantList& tabs,
+    const QVariantList& panels, const QVariantList& schema) {
     auto it = m_plugins.find(id);
     if (it == m_plugins.end() || !it->host) {
         return;
@@ -361,6 +369,7 @@ void PluginManager::onHandshaken(
     Plugin& plugin = *it;
     plugin.runtimeVersion = version;
     plugin.tabs = tabs;
+    plugin.panels = panels;
     plugin.schema = schema;
     writeJson(settingsDirFor(id) + u"/schema.json"_s, schema);
 
@@ -368,6 +377,9 @@ void PluginManager::onHandshaken(
     plugin.host->applySettings(effectiveSettings(plugin));
     for (const QVariant& t : tabs) {
         plugin.host->fetchView(t.toMap().value(u"viewId"_s).toString());
+    }
+    for (const QVariant& p : panels) {
+        plugin.host->fetchView(p.toMap().value(u"viewId"_s).toString());
     }
 
     rebuildInstalled();
@@ -395,6 +407,7 @@ void PluginManager::setEnabled(const QString& id, bool enabled) {
         it->host->stop();
         it->views.clear();
         it->tabs.clear();
+        it->panels.clear();
         rebuildTabs();
     }
     rebuildInstalled();
@@ -717,7 +730,7 @@ void PluginManager::saveOverrides(const QString& id) const {
         QFile::remove(path);
         return;
     }
-    writeJson(path, it->overrides);
+    writeJson(path, it->overrides, true);
 }
 
 // ------------------------------------------------------------------ views
@@ -791,7 +804,7 @@ void PluginManager::rebuildInstalled() {
             { u"description"_s, m.description }, { u"author"_s, m.author }, { u"icon"_s, m.icon },
             { u"homepage"_s, m.homepage }, { u"enabled"_s, p.enabled }, { u"state"_s, stateName(p) },
             { u"error"_s, error }, { u"hasSettings"_s, !p.schema.isEmpty() }, { u"hasDashboard"_s, !p.tabs.isEmpty() },
-            { u"updateAvailable"_s, update } });
+            { u"hasPanel"_s, !p.panels.isEmpty() }, { u"updateAvailable"_s, update } });
     }
     for (auto it = m_scanErrors.cbegin(); it != m_scanErrors.cend(); ++it) {
         list.append(QVariantMap{ { u"id"_s, it.key() }, { u"name"_s, it.key() }, { u"version"_s, QString() },
@@ -851,6 +864,24 @@ void PluginManager::rebuildTabs() {
     if (list != m_tabsCache) {
         m_tabsCache = list;
         emit dashboardTabsChanged();
+    }
+
+    // Same moments, same rule: panels of plugins that aren't running are gone.
+    QVariantList panelList;
+    for (auto it = m_plugins.cbegin(); it != m_plugins.cend(); ++it) {
+        if (!it->enabled || !it->host || it->host->state() != PluginHost::State::Running) {
+            continue;
+        }
+        for (const QVariant& p : it->panels) {
+            const QVariantMap panel = p.toMap();
+            panelList.append(QVariantMap{ { u"pluginId"_s, it.key() }, { u"pluginName"_s, it->info.manifest.name },
+                { u"viewId"_s, panel.value(u"viewId"_s) }, { u"title"_s, panel.value(u"title"_s) },
+                { u"icon"_s, panel.value(u"icon"_s) } });
+        }
+    }
+    if (panelList != m_panelsCache) {
+        m_panelsCache = panelList;
+        emit panelsChanged();
     }
 }
 

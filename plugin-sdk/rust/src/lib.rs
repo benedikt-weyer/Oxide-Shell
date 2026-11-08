@@ -56,12 +56,12 @@ pub mod proto {
 pub mod settings;
 pub mod ui;
 
-pub use proto::{ApiVersion, DashboardTab};
+pub use proto::{ApiVersion, DashboardTab, Panel};
 pub use settings::{Field, Section, Settings, SettingsSchema};
 
 /// The API version this SDK implements. Bumped together with
 /// `plugin-sdk/proto/caelestia_plugin.proto`; see the versioning rules there.
-pub const API_VERSION: ApiVersion = ApiVersion { major: 1, minor: 1 };
+pub const API_VERSION: ApiVersion = ApiVersion { major: 1, minor: 2 };
 
 /// Whether a plugin built against `plugin` can run on a host that implements `host`.
 pub fn is_compatible(plugin: &ApiVersion, host: &ApiVersion) -> bool {
@@ -82,11 +82,26 @@ impl DashboardTab {
     }
 }
 
+impl Panel {
+    pub fn new(
+        view_id: impl Into<String>,
+        title: impl Into<String>,
+        icon: impl Into<String>,
+    ) -> Self {
+        Self {
+            view_id: view_id.into(),
+            title: title.into(),
+            icon: icon.into(),
+        }
+    }
+}
+
 /// Static description of a plugin, returned during the handshake.
 #[derive(Clone, Debug)]
 pub struct PluginInfo {
     version: String,
     dashboard_tabs: Vec<DashboardTab>,
+    panels: Vec<Panel>,
     settings: SettingsSchema,
 }
 
@@ -95,6 +110,7 @@ impl PluginInfo {
         Self {
             version: version.into(),
             dashboard_tabs: Vec::new(),
+            panels: Vec::new(),
             settings: SettingsSchema::new(),
         }
     }
@@ -102,6 +118,13 @@ impl PluginInfo {
     /// Adds a tab to the dashboard, rendered from [`Plugin::view`].
     pub fn dashboard_tab(mut self, tab: DashboardTab) -> Self {
         self.dashboard_tabs.push(tab);
+        self
+    }
+
+    /// Adds a button to the bar that opens a panel rendered from
+    /// [`Plugin::view`] (API 1.2).
+    pub fn panel(mut self, panel: Panel) -> Self {
+        self.panels.push(panel);
         self
     }
 
@@ -234,6 +257,7 @@ impl<P: Plugin> proto::plugin_server::Plugin for Service<P> {
             plugin_version: info.version,
             contributions: Some(proto::Contributions {
                 dashboard_tabs: info.dashboard_tabs,
+                panels: info.panels,
             }),
             settings_schema: Some(info.settings.0),
         }))

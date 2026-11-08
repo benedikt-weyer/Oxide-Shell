@@ -180,6 +180,8 @@ PageBase {
                             id: textComp
 
                             TextFieldRow {
+                                id: textRow
+
                                 first: fieldLoader.isFirst
                                 last: fieldLoader.isLast
                                 label: fieldLoader.field.label
@@ -192,6 +194,8 @@ PageBase {
                                     Plugins.setSetting(root.pluginId, fieldLoader.field.key, fieldLoader.field.default);
                                     clear();
                                 }
+
+                                Component.onCompleted: textRow.field.echoMode = fieldLoader.field.secret ? TextInput.Password : TextInput.Normal
                             }
                         }
 

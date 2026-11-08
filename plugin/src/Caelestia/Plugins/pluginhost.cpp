@@ -151,15 +151,20 @@ QString align(wire::Align a) {
     }
 }
 
-// Nodes become plain JS-friendly maps: {type, ...props, children?}. Depth is
-// bounded so a buggy plugin can't make the shell recurse without end.
-QVariantMap nodeToVariant(const wire::Node& node, int depth);
+// Nodes become plain JS-friendly maps: {type, key, ...props, children?}. Depth
+// is bounded so a buggy plugin can't make the shell recurse without end.
+//
+// `key` is what the QML side matches nodes of consecutive views by (so a
+// widget survives an update): the key the plugin gave the node or, failing
+// that, `fallbackKey`, which is built from the position among the siblings.
+QVariantMap nodeToVariant(const wire::Node& node, int depth, const QString& fallbackKey);
 
 QVariantList children(const wire::Box& box, int depth) {
     QVariantList list;
     list.reserve(box.children_size());
+    int index = 0;
     for (const wire::Node& child : box.children()) {
-        list.append(nodeToVariant(child, depth + 1));
+        list.append(nodeToVariant(child, depth + 1, u"#"_s + QString::number(index++)));
     }
     return list;
 }
@@ -181,7 +186,8 @@ QVariantMap boxToVariant(const QString& type, const wire::Box& box, int depth) {
         { u"children"_s, children(box, depth) } };
 }
 
-QVariantMap nodeToVariant(const wire::Node& node, int depth) {
+// The widget itself, without the key.
+QVariantMap nodeProperties(const wire::Node& node, int depth) {
     constexpr int k_maxDepth = 24;
     if (depth > k_maxDepth) {
         return { { u"type"_s, u"spacer"_s }, { u"size"_s, 0 } };
@@ -269,11 +275,51 @@ QVariantMap nodeToVariant(const wire::Node& node, int depth) {
         return { { u"type"_s, u"logView"_s }, { u"lines"_s, lines }, { u"height"_s, l.height() },
             { u"placeholder"_s, toQString(l.placeholder()) } };
     }
+    case wire::Node::kTextInput: {
+        const auto& t = node.text_input();
+        return { { u"type"_s, u"textInput"_s }, { u"placeholder"_s, toQString(t.placeholder()) },
+            { u"actionId"_s, toQString(t.action_id()) }, { u"value"_s, toQString(t.value()) },
+            { u"resetToken"_s, toQString(t.reset_token()) }, { u"multiline"_s, t.multiline() },
+            { u"submitIcon"_s, toQString(t.submit_icon()) }, { u"disabled"_s, t.disabled() },
+            { u"autofocus"_s, t.autofocus() }, { u"maxLines"_s, t.max_lines() } };
+    }
+    case wire::Node::kSelect: {
+        const auto& sel = node.select();
+        QVariantList options;
+        options.reserve(sel.options_size());
+        for (const wire::SelectOption& o : sel.options()) {
+            options.append(QVariantMap{ { u"id"_s, toQString(o.value()) }, { u"label"_s, toQString(o.label()) },
+                { u"icon"_s, toQString(o.icon()) }, { u"sub"_s, toQString(o.description()) } });
+        }
+        return { { u"type"_s, u"select"_s }, { u"icon"_s, toQString(sel.icon()) },
+            { u"placeholder"_s, toQString(sel.placeholder()) }, { u"selected"_s, toQString(sel.selected()) },
+            { u"options"_s, options }, { u"actionId"_s, toQString(sel.action_id()) },
+            { u"title"_s, toQString(sel.title()) }, { u"disabled"_s, sel.disabled() } };
+    }
+    case wire::Node::kMarkdown:
+        return { { u"type"_s, u"markdown"_s }, { u"text"_s, toQString(node.markdown().text()) },
+            { u"tone"_s, tone(node.markdown().tone()) } };
+    case wire::Node::kScroll: {
+        const auto& sc = node.scroll();
+        QVariantMap map{ { u"type"_s, u"scroll"_s }, { u"height"_s, sc.height() }, { u"expand"_s, sc.expand() },
+            { u"stickToEnd"_s, sc.stick_to_end() } };
+        if (sc.has_child()) {
+            map[u"child"_s] = nodeToVariant(sc.child(), depth + 1, u"child"_s);
+        }
+        return map;
+    }
     case wire::Node::KIND_NOT_SET:
         break;
     }
     // Unknown (newer) widget: render nothing rather than failing the whole view.
     return { { u"type"_s, u"spacer"_s }, { u"size"_s, 0 } };
+}
+
+QVariantMap nodeToVariant(const wire::Node& node, int depth, const QString& fallbackKey) {
+    QVariantMap map = nodeProperties(node, depth);
+    // The type is part of the identity: a node that became another kind of widget must be rebuilt, not updated
+    map[u"key"_s] = (node.key().empty() ? fallbackKey : toQString(node.key())) + u'/' + map.value(u"type"_s).toString();
+    return map;
 }
 
 QVariantList schemaToVariant(const wire::SettingsSchema& schema) {
@@ -303,6 +349,7 @@ QVariantList schemaToVariant(const wire::SettingsSchema& schema) {
                 field[u"type"_s] = u"text"_s;
                 field[u"default"_s] = toQString(f.text().default_value());
                 field[u"placeholder"_s] = toQString(f.text().placeholder());
+                field[u"secret"_s] = f.text().secret();
                 break;
             case wire::SettingField::kChoice: {
                 field[u"type"_s] = u"choice"_s;
@@ -530,6 +577,11 @@ void PluginHost::beginSession() {
             tabs.append(QVariantMap{ { u"viewId"_s, toQString(t.view_id()) }, { u"title"_s, toQString(t.title()) },
                 { u"icon"_s, toQString(t.icon()) } });
         }
+        QVariantList panels;
+        for (const wire::Panel& p : reply.contributions().panels()) {
+            panels.append(QVariantMap{ { u"viewId"_s, toQString(p.view_id()) }, { u"title"_s, toQString(p.title()) },
+                { u"icon"_s, toQString(p.icon()) } });
+        }
         const QVariantList schema = schemaToVariant(reply.settings_schema());
         const QString version = toQString(reply.plugin_version());
 
@@ -544,13 +596,13 @@ void PluginHost::beginSession() {
         }
         auto reader = stub->Events(&eventsCtx, wire::EventsRequest());
 
-        post([version, tabs, schema](PluginHost* host) {
+        post([version, tabs, panels, schema](PluginHost* host) {
             if (host->m_state != State::Starting) {
                 return;
             }
             host->setState(State::Running);
             host->m_stableTimer.start();
-            emit host->handshaken(version, tabs, schema);
+            emit host->handshaken(version, tabs, panels, schema);
         });
 
         wire::PluginEvent event;
@@ -558,7 +610,7 @@ void PluginHost::beginSession() {
             if (event.has_view_update()) {
                 const wire::View& view = event.view_update().view();
                 const QString viewId = toQString(view.view_id());
-                const QVariantMap tree = nodeToVariant(view.root(), 0);
+                const QVariantMap tree = nodeToVariant(view.root(), 0, u"root"_s);
                 post([viewId, tree](PluginHost* host) {
                     emit host->viewUpdated(viewId, tree);
                 });
@@ -647,7 +699,7 @@ void PluginHost::fetchView(const QString& viewId) {
         if (!ok || session->cancelled || !self) {
             return;
         }
-        const QVariantMap tree = nodeToVariant(view.root(), 0);
+        const QVariantMap tree = nodeToVariant(view.root(), 0, u"root"_s);
         QMetaObject::invokeMethod(
             self.data(),
             [self, session, viewId, tree] {

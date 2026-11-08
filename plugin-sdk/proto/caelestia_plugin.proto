@@ -73,6 +73,8 @@ message HandshakeReply {
 // What the plugin hooks into. New hook points are added as new fields.
 message Contributions {
     repeated DashboardTab dashboard_tabs = 1;
+    // Added in API 1.2.
+    repeated Panel panels = 2;
 }
 
 message DashboardTab {
@@ -80,6 +82,19 @@ message DashboardTab {
     string view_id = 1;
     string title = 2;
     // Material Symbols icon name.
+    string icon = 3;
+}
+
+// API 1.2: a button in the bar, next to the notifications button, that opens a
+// panel drawn from the view `view_id`. The shell adds the panel's header
+// (title, a button for the plugin's settings page, a close button); the view
+// fills the rest, so a column whose scroll area has `expand` set reaches the
+// bottom of the panel.
+message Panel {
+    // Passed back to GetView / InvokeAction and used in ViewUpdate.
+    string view_id = 1;
+    string title = 2;
+    // Material Symbols icon name, also used for the bar button.
     string icon = 3;
 }
 
@@ -129,6 +144,9 @@ message NumberField {
 message TextField {
     string default_value = 1;
     string placeholder = 2;
+    // API 1.2: shown as dots while typing, for API keys and the like. The
+    // value is still stored in the settings file as plain text.
+    bool secret = 3;
 }
 
 message ChoiceField {
@@ -200,7 +218,18 @@ message Node {
         // Added in API 1.1.
         Spinner spinner = 9;
         LogView log_view = 10;
+        // Added in API 1.2.
+        TextInput text_input = 11;
+        Select select = 12;
+        Markdown markdown = 13;
+        Scroll scroll = 14;
     }
+    // API 1.2: identifies the node among its siblings across view updates.
+    // The shell keeps the widget of a node whose key is unchanged (and just
+    // updates it) instead of rebuilding it, which is what lets a text field
+    // keep its text and focus and a scroll area its position while the rest
+    // of the view changes. Nodes without a key are matched by position.
+    string key = 20;
 }
 
 message Box {
@@ -371,3 +400,71 @@ message Notification {
 
 message ShutdownRequest {}
 message ShutdownReply {}
+
+// ------------------------------------------------------------- API 1.2 widgets
+
+// A text field. The user's text lives in the shell: Enter (and the submit
+// button) report it through InvokeAction(action_id, payload = text) and then
+// empty the field. The shell never sends the text back, so a view update
+// can't undo what is being typed; the plugin changes the field only by
+// changing `reset_token`, which sets it back to `value`.
+message TextInput {
+    string placeholder = 1;
+    string action_id = 2;
+    // What the field holds initially and after `reset_token` changed.
+    string value = 3;
+    string reset_token = 4;
+    // Several lines; Shift+Enter inserts a line break, Enter submits.
+    bool multiline = 5;
+    // Material Symbols icon of a submit button inside the field; empty for none.
+    string submit_icon = 6;
+    // Submitting does nothing (typing still works), e.g. while busy.
+    bool disabled = 7;
+    // Takes keyboard focus when it appears.
+    bool autofocus = 8;
+    // Lines the field grows to before it scrolls; 0 picks a default.
+    uint32 max_lines = 9;
+}
+
+// A chip that opens a list of options, for picking one value.
+message Select {
+    // Material Symbols icon name.
+    string icon = 1;
+    // Shown when no option is selected.
+    string placeholder = 2;
+    // Value of the selected option; the chip shows that option's label.
+    string selected = 3;
+    repeated SelectOption options = 4;
+    // Reported through InvokeAction with the picked option's value as payload.
+    string action_id = 5;
+    // Heading of the list.
+    string title = 6;
+    bool disabled = 7;
+}
+
+message SelectOption {
+    string value = 1;
+    string label = 2;
+    // Material Symbols icon name.
+    string icon = 3;
+    // A second, dimmer line.
+    string description = 4;
+}
+
+// Text with Markdown formatting that can be selected and copied.
+message Markdown {
+    string text = 1;
+    Tone tone = 2;
+}
+
+// Scrolls its child vertically.
+message Scroll {
+    Node child = 1;
+    // Height in px; 0 for as high as the child, unless `expand` is set.
+    double height = 2;
+    // Takes the remaining height of the parent column.
+    bool expand = 3;
+    // Follows the end of the child while it grows, until the user scrolls up
+    // (and again once they scroll back down to the end).
+    bool stick_to_end = 4;
+}

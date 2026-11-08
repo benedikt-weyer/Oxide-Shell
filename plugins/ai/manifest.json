@@ -1,0 +1,10 @@
+{
+    "id": "ai",
+    "name": "AI Chat",
+    "version": "0.1.0",
+    "description": "Chat with OpenAI or Anthropic models from a panel in the bar.",
+    "author": "Caelestia",
+    "icon": "auto_awesome",
+    "api": { "major": 1, "minor": 2 },
+    "exec": "bin/caelestia-plugin-ai"
+}

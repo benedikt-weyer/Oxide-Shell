@@ -52,6 +52,7 @@ StyledWindow {
         screenState.launcher = false;
         screenState.session = false;
         screenState.dashboard = false;
+        screenState.pluginPanel = "";
         panels.popouts.close();
     }
 
@@ -63,8 +64,9 @@ StyledWindow {
     // only honours set_selection from a client that currently holds
     // keyboard focus (see ironland-compositor's data_device dispatch) -
     // without this, clicking an entry closes the overlay but silently
-    // fails to actually update the clipboard.
-    WlrLayershell.keyboardFocus: screenState.launcher || screenState.session || screenState.clipboardHistory ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    // fails to actually update the clipboard. Also for a plugin's panel, whose
+    // text field is typed into.
+    WlrLayershell.keyboardFocus: screenState.launcher || screenState.session || screenState.clipboardHistory || screenState.pluginPanel ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     mask: hasFullscreen ? emptyRegion : regions
 
@@ -185,6 +187,13 @@ StyledWindow {
         }
 
         PanelBg {
+            id: pluginPanelBg
+
+            panel: panels.pluginPanel
+            deformAmount: 0.1
+        }
+
+        PanelBg {
             id: launcherBg
 
             panel: panels.launcher
@@ -279,6 +288,9 @@ StyledWindow {
             }
             clipboardHistory.transform: Matrix4x4 {
                 matrix: clipboardHistoryBg.deformMatrix
+            }
+            pluginPanel.transform: Matrix4x4 {
+                matrix: pluginPanelBg.deformMatrix
             }
             launcher.transform: Matrix4x4 {
                 matrix: launcherBg.deformMatrix

@@ -87,7 +87,7 @@
       '';
     };
 
-  bundledPluginList = map mkPlugin ["pomodoro" "nix"];
+  bundledPluginList = map mkPlugin ["pomodoro" "nix" "ai"];
 
   # The directory CAELESTIA_BUNDLED_PLUGINS_DIR points at: one real copy per
   # plugin (not symlinks, installing copies them into the user's data dir).

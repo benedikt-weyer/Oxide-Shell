@@ -194,6 +194,18 @@ ColumnLayout {
                             screenState: root.screenState
                         }
 
+                        Repeater {
+                            model: root.Config.bar.pluginButtons ? Plugins.panels : []
+
+                            delegate: PluginPanelButton {
+                                required property var modelData
+
+                                objectName: `taskbarPluginButton-${modelData.pluginId}`
+                                panel: modelData
+                                screenState: root.screenState
+                            }
+                        }
+
                         Power {
                             objectName: "taskbarPowerButton"
                             screenState: root.screenState

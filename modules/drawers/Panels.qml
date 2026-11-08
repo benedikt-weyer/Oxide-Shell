@@ -8,6 +8,7 @@ import qs.modules.dashboard as Dashboard
 import qs.modules.launcher as Launcher
 import qs.modules.notifications as Notifications
 import qs.modules.osd as Osd
+import qs.modules.pluginpanel as PluginPanel
 import qs.modules.session as Session
 import qs.modules.sidebar as Sidebar
 import qs.modules.utilities as Utilities
@@ -31,6 +32,7 @@ Item {
     readonly property alias launcher: launcher
     readonly property alias dashboard: dashboard
     readonly property alias clipboardHistory: clipboardHistory
+    readonly property alias pluginPanel: pluginPanel
     readonly property alias popouts: popoutsWrapper.content
     readonly property alias popoutsWrapper: popoutsWrapper
     readonly property alias utilities: utilities
@@ -122,6 +124,15 @@ Item {
 
     ClipboardHistoryModule.Wrapper {
         id: clipboardHistory
+
+        screenState: root.screenState
+
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+    }
+
+    PluginPanel.Wrapper {
+        id: pluginPanel
 
         screenState: root.screenState
 

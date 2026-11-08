@@ -34,6 +34,8 @@ class PluginManager : public QObject {
     Q_PROPERTY(QVariantList sources READ sources NOTIFY sourcesChanged)
     // [{pluginId, viewId, text, iconName}]
     Q_PROPERTY(QVariantList dashboardTabs READ dashboardTabs NOTIFY dashboardTabsChanged)
+    // Bar buttons that open a plugin panel: [{pluginId, pluginName, viewId, title, icon}]
+    Q_PROPERTY(QVariantList panels READ panels NOTIFY panelsChanged)
     Q_PROPERTY(bool busy READ busy NOTIFY busyChanged)
     // Id of the plugin (or source) an operation is running for.
     Q_PROPERTY(QString busyId READ busyId NOTIFY busyChanged)
@@ -51,6 +53,8 @@ public:
     [[nodiscard]] QVariantList sources() const { return m_sourcesCache; }
 
     [[nodiscard]] QVariantList dashboardTabs() const { return m_tabsCache; }
+
+    [[nodiscard]] QVariantList panels() const { return m_panelsCache; }
 
     [[nodiscard]] bool busy() const { return m_busy; }
 
@@ -88,6 +92,7 @@ signals:
     void availableChanged();
     void sourcesChanged();
     void dashboardTabsChanged();
+    void panelsChanged();
     void busyChanged();
     void lastErrorChanged();
     void viewUpdated(const QString& pluginId, const QString& viewId);
@@ -104,6 +109,7 @@ private:
         PluginHost* host = nullptr;
         QString runtimeVersion;
         QVariantList tabs;
+        QVariantList panels;
         QVariantList schema;
         QVariantMap overrides;
         QHash<QString, QVariantMap> views;
@@ -123,7 +129,8 @@ private:
     void startPlugin(Plugin& plugin);
     void createHost(Plugin& plugin);
     void destroyHost(Plugin& plugin);
-    void onHandshaken(const QString& id, const QString& version, const QVariantList& tabs, const QVariantList& schema);
+    void onHandshaken(const QString& id, const QString& version, const QVariantList& tabs, const QVariantList& panels,
+        const QVariantList& schema);
     void loadSchemaCache(Plugin& plugin) const;
 
     void refreshSource(int index);
@@ -163,6 +170,7 @@ private:
     QVariantList m_availableCache;
     QVariantList m_sourcesCache;
     QVariantList m_tabsCache;
+    QVariantList m_panelsCache;
 };
 
 } // namespace caelestia::plugins

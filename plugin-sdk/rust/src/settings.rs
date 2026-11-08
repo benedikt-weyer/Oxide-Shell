@@ -87,6 +87,7 @@ impl Field {
             proto::setting_field::Kind::Text(proto::TextField {
                 default_value: default.into(),
                 placeholder: String::new(),
+                secret: false,
             }),
         )
     }
@@ -131,6 +132,15 @@ impl Field {
     pub fn integer(mut self) -> Self {
         if let Some(proto::setting_field::Kind::Number(n)) = &mut self.0.kind {
             n.integer = true;
+        }
+        self
+    }
+
+    /// Shows a text field as dots while typing, for API keys and the like
+    /// (API 1.2). The value is still stored as plain text.
+    pub fn secret(mut self) -> Self {
+        if let Some(proto::setting_field::Kind::Text(t)) = &mut self.0.kind {
+            t.secret = true;
         }
         self
     }

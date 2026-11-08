@@ -12,6 +12,8 @@ PersistentProperties {
     property bool utilities
     property bool sidebar
     property bool clipboardHistory
+    // "<plugin id>/<view id>" of the plugin panel that is open, empty for none
+    property string pluginPanel
 
     // Dashboard state
     property int dashboardTab

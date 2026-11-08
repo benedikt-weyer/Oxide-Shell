@@ -24,6 +24,11 @@ Singleton {
         FloatingWindow {
             id: win
 
+            // Where Nexus opens: a page, the sub-pages to go into from there and the plugin the sub-pages are about
+            property int initialPage
+            property list<int> initialStack
+            property string initialPluginId
+
             color: Colours.tPalette.m3surface
             surfaceFormat.opaque: false
 
@@ -49,7 +54,14 @@ Singleton {
                 anchors.fill: parent
                 nState.screen: win.screen
                 nState.isWindow: true
+                nState.currentPageIdx: win.initialPage
+                nState.selectedPluginId: win.initialPluginId
                 onClose: win.destroy()
+
+                Component.onCompleted: {
+                    for (const sub of win.initialStack)
+                        nState.openSubPage(sub);
+                }
             }
 
             Behavior on color {

@@ -1,7 +1,9 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls as QC
 import QtQuick.Layouts
+import Quickshell
 import Caelestia.Config
 import qs.components
 import qs.components.containers
@@ -11,6 +13,11 @@ import qs.services
 // Renders one node of a plugin view tree (see plugin-sdk/proto/caelestia_plugin.proto
 // for the widget vocabulary) and, recursively, its children. Unknown node
 // types render nothing so a newer plugin never breaks an older shell.
+//
+// A view update replaces the whole tree. Children are matched by their `key`
+// (ScriptModel.objectProp), so a widget whose key is still there is updated in
+// place instead of being rebuilt: that is what lets a text field keep its text
+// and focus, and a scroll area its position, while a reply streams in.
 Loader {
     id: root
 
@@ -59,6 +66,14 @@ Loader {
             return spinnerComp;
         case "logView":
             return logComp;
+        case "textInput":
+            return textInputComp;
+        case "select":
+            return selectComp;
+        case "markdown":
+            return markdownComp;
+        case "scroll":
+            return scrollComp;
         default:
             return null;
         }
@@ -71,7 +86,10 @@ Loader {
             spacing: root.node.spacing
 
             Repeater {
-                model: root.node.children
+                model: ScriptModel {
+                    values: root.node.children ?? []
+                    objectProp: "key"
+                }
 
                 delegate: Child {
                     inColumn: true
@@ -109,7 +127,10 @@ Loader {
             spacing: root.node.spacing
 
             Repeater {
-                model: root.node.children
+                model: ScriptModel {
+                    values: root.node.children ?? []
+                    objectProp: "key"
+                }
 
                 delegate: Child {
                     inColumn: false
@@ -379,6 +400,193 @@ Loader {
         }
     }
 
+    Component {
+        id: markdownComp
+
+        TextEdit {
+            readOnly: true
+            selectByMouse: true
+            persistentSelection: true
+            textFormat: TextEdit.MarkdownText
+            wrapMode: TextEdit.Wrap
+            renderType: TextEdit.NativeRendering
+            text: root.node.text
+            color: root.toneColour(root.node.tone)
+            selectionColor: Qt.alpha(Colours.palette.m3primary, 0.4)
+            selectedTextColor: color
+            font: Tokens.font.body.medium
+            onLinkActivated: link => Qt.openUrlExternally(link)
+        }
+    }
+
+    Component {
+        id: selectComp
+
+        PluginSelect {
+            readonly property var picked: root.node.options.find(o => o.id === root.node.selected)
+
+            items: root.node.options
+            current: root.node.selected
+            icon: root.node.icon || (picked?.icon ?? "")
+            text: picked?.label ?? root.node.placeholder
+            title: root.node.title
+            enabled: !root.node.disabled
+            opacity: enabled ? 1 : 0.5
+            onPicked: id => Plugins.invokeAction(root.pluginId, root.viewId, root.node.actionId, id)
+        }
+    }
+
+    Component {
+        id: textInputComp
+
+        StyledRect {
+            id: box
+
+            readonly property string resetToken: root.node.resetToken
+            readonly property int maxLines: root.node.maxLines > 0 ? root.node.maxLines : 6
+
+            function submit(): void {
+                if (root.node.disabled || !input.text.trim())
+                    return;
+                Plugins.invokeAction(root.pluginId, root.viewId, root.node.actionId, input.text);
+                input.clear();
+            }
+
+            implicitWidth: 240
+            implicitHeight: Math.max(submitButton.implicitHeight, Math.min(input.implicitHeight, inputMetrics.height * box.maxLines + input.topPadding + input.bottomPadding)) + Tokens.padding.small * 2
+
+            radius: Tokens.rounding.large
+            color: Colours.tPalette.m3surfaceContainerHigh
+            border.width: input.activeFocus ? 2 : 1
+            border.color: input.activeFocus ? Colours.palette.m3primary : Colours.palette.m3outlineVariant
+
+            // Setting the token to something new puts the field back to `value`
+            onResetTokenChanged: input.text = root.node.value
+            Component.onCompleted: {
+                input.text = root.node.value;
+                if (root.node.autofocus)
+                    input.forceActiveFocus();
+            }
+
+            FontMetrics {
+                id: inputMetrics
+
+                font: input.font
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: Tokens.padding.small
+                anchors.leftMargin: Tokens.padding.medium
+                spacing: Tokens.spacing.small
+
+                Flickable {
+                    id: flick
+
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    boundsBehavior: Flickable.StopAtBounds
+                    flickableDirection: Flickable.VerticalFlick
+                    contentWidth: width
+                    contentHeight: input.implicitHeight
+
+                    QC.TextArea.flickable: QC.TextArea {
+                        id: input
+
+                        function handleKey(event: var): void {
+                            const isEnter = event.key === Qt.Key_Return || event.key === Qt.Key_Enter;
+                            if (isEnter && !(root.node.multiline && (event.modifiers & Qt.ShiftModifier))) {
+                                box.submit();
+                                event.accepted = true;
+                            }
+                        }
+
+                        topPadding: Tokens.padding.extraSmall
+                        bottomPadding: Tokens.padding.extraSmall
+                        leftPadding: 0
+                        rightPadding: 0
+                        wrapMode: root.node.multiline ? TextEdit.Wrap : TextEdit.NoWrap
+                        placeholderText: root.node.placeholder
+                        placeholderTextColor: Colours.palette.m3outline
+                        color: Colours.palette.m3onSurface
+                        selectionColor: Qt.alpha(Colours.palette.m3primary, 0.4)
+                        selectedTextColor: color
+                        font: Tokens.font.body.medium
+                        background: null
+                        selectByMouse: true
+
+                        Keys.onPressed: event => handleKey(event)
+                    }
+                }
+
+                IconButton {
+                    id: submitButton
+
+                    Layout.alignment: Qt.AlignBottom
+                    visible: root.node.submitIcon.length > 0
+                    type: IconButton.Filled
+                    icon: root.node.submitIcon
+                    disabled: root.node.disabled || !input.text.trim()
+                    onClicked: box.submit()
+                }
+            }
+        }
+    }
+
+    Component {
+        id: scrollComp
+
+        Item {
+            id: scroller
+
+            property bool follow: true
+
+            function scrollToEnd(): void {
+                flick.contentY = Math.max(0, flick.contentHeight - flick.height);
+            }
+
+            implicitWidth: 200
+            implicitHeight: root.node.height > 0 ? root.node.height : (root.node.expand ? 120 : body.implicitHeight)
+
+            StyledFlickable {
+                id: flick
+
+                anchors.fill: parent
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                flickableDirection: Flickable.VerticalFlick
+                contentWidth: width
+                contentHeight: body.implicitHeight
+
+                StyledScrollBar.vertical: StyledScrollBar {
+                    flickable: flick
+                }
+
+                // Leaving the end stops following it; coming back to the end resumes
+                onMovementStarted: scroller.follow = false
+                onAtYEndChanged: if (atYEnd)
+                    scroller.follow = true
+                onContentHeightChanged: if (root.node.stickToEnd && scroller.follow)
+                    Qt.callLater(scroller.scrollToEnd)
+                onHeightChanged: if (root.node.stickToEnd && scroller.follow)
+                    Qt.callLater(scroller.scrollToEnd)
+
+                Loader {
+                    id: body
+
+                    width: flick.width
+                    source: Qt.resolvedUrl("PluginNode.qml")
+                    onLoaded: {
+                        item.node = Qt.binding(() => root.node.child);
+                        item.pluginId = Qt.binding(() => root.pluginId);
+                        item.viewId = Qt.binding(() => root.viewId);
+                    }
+                }
+            }
+        }
+    }
+
     // A node inside a container. QML can't instantiate a component from inside
     // itself by type name, so the recursion goes through Loader.source.
     component Child: Loader {
@@ -390,14 +598,19 @@ Loader {
 
         readonly property bool isSpacer: modelData?.type === "spacer"
         readonly property bool flexible: isSpacer && modelData.size === 0
+        // Text that wraps, fields and scroll areas take the width they are given
+        readonly property bool wide: ["markdown", "textInput", "scroll"].includes(modelData?.type)
+        readonly property bool tall: modelData?.type === "scroll" && modelData.expand
 
         Layout.alignment: {
             if (inColumn)
                 return align === "center" ? Qt.AlignHCenter : align === "end" ? Qt.AlignRight : Qt.AlignLeft;
             return align === "center" ? Qt.AlignVCenter : align === "end" ? Qt.AlignBottom : Qt.AlignTop;
         }
-        Layout.fillWidth: (modelData?.fill ?? false) || modelData?.type === "divider" || (flexible && !inColumn)
-        Layout.fillHeight: flexible && inColumn
+        // Without this a layout can't be narrower than everything in it at its natural size, and overflows its parent
+        Layout.minimumWidth: 0
+        Layout.fillWidth: (modelData?.fill ?? false) || modelData?.type === "divider" || wide || (flexible && !inColumn)
+        Layout.fillHeight: (flexible && inColumn) || tall
 
         source: Qt.resolvedUrl("PluginNode.qml")
         onLoaded: {

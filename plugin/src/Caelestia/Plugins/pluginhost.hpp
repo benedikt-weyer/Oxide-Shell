@@ -66,8 +66,9 @@ public:
 
 signals:
     void stateChanged();
-    // `tabs`: [{viewId, title, icon}]; `schema`: see PluginManager::settingsSchema().
-    void handshaken(const QString& pluginVersion, const QVariantList& tabs, const QVariantList& schema);
+    // `tabs` and `panels`: [{viewId, title, icon}]; `schema`: see PluginManager::settingsSchema().
+    void handshaken(
+        const QString& pluginVersion, const QVariantList& tabs, const QVariantList& panels, const QVariantList& schema);
     void viewUpdated(const QString& viewId, const QVariantMap& tree);
     // {title, body, icon, urgency}
     void notification(const QVariantMap& notification);

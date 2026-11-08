@@ -176,6 +176,7 @@ QtObject {
         {label: qsTr("Persistent"), sub: qsTr("Keep the bar visible at all times"), path: "Panels › Taskbar", page: 7, stack: [2]},
         {label: qsTr("Show on hover"), sub: qsTr("Reveal the bar when the cursor reaches the screen edge"), path: "Panels › Taskbar", page: 7, stack: [2]},
         {label: qsTr("Sidebar button"), sub: qsTr("Show a button in the bar that toggles the sidebar"), path: "Panels › Taskbar", page: 7, stack: [2]},
+        {label: qsTr("Plugin buttons"), sub: qsTr("Show the buttons that plugins add to the bar, next to the sidebar button"), path: "Panels › Taskbar", page: 7, stack: [2]},
         {label: qsTr("Drag threshold"), sub: qsTr("Pixels dragged before the bar reveals"), path: "Panels › Taskbar", page: 7, stack: [2]},
         {label: qsTr("Components"), sub: "", path: "Panels › Taskbar", page: 7, stack: [2]},
         {label: qsTr("Workspaces"), sub: qsTr("Indicators, window icons"), path: "Panels › Taskbar", page: 7, stack: [2]},

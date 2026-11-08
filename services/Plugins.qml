@@ -12,7 +12,7 @@ import Caelestia.Plugins
 Singleton {
     id: root
 
-    // [{id, name, version, description, author, icon, homepage, enabled, state, error, hasSettings, hasDashboard, updateAvailable}]
+    // [{id, name, version, description, author, icon, homepage, enabled, state, error, hasSettings, hasDashboard, hasPanel, updateAvailable}]
     readonly property var installed: PluginManager.installed
     // [{id, name, version, description, author, icon, source, installed, installedVersion, updateAvailable, compatible}]
     readonly property var available: PluginManager.available
@@ -20,6 +20,8 @@ Singleton {
     readonly property var sources: PluginManager.sources
     // [{pluginId, viewId, text, iconName}]
     readonly property var dashboardTabs: PluginManager.dashboardTabs
+    // Bar buttons that open a panel: [{pluginId, pluginName, viewId, title, icon}]
+    readonly property var panels: PluginManager.panels
     readonly property bool busy: PluginManager.busy
     readonly property string busyId: PluginManager.busyId
     readonly property string lastError: PluginManager.lastError

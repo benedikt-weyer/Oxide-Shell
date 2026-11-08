@@ -53,6 +53,7 @@
       iron-polkit = pkgs.callPackage ./nix/iron-polkit.nix {};
       plugin-pomodoro = caelestia-shell.plugins.caelestia-plugin-pomodoro;
       plugin-nix = caelestia-shell.plugins.caelestia-plugin-nix;
+      plugin-ai = caelestia-shell.plugins.caelestia-plugin-ai;
       plugin-sdk-cpp = pkgs.callPackage ./nix/plugin-sdk-cpp.nix {stdenv = pkgs.clangStdenv;};
       default = caelestia-shell;
     });
