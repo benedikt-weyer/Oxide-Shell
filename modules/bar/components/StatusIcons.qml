@@ -37,8 +37,6 @@ StyledRect {
     function collapsed(entry: var): bool {
         if (entry.id === "lockStatus")
             return !Hypr.capsLock && !Hypr.numLock;
-        if (entry.id === "cinemaMode")
-            return !CinemaMode.enabled;
         return false;
     }
 
