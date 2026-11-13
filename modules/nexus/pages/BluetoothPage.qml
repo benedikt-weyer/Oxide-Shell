@@ -14,7 +14,7 @@ import qs.modules.nexus.common
 PageBase {
     id: root
 
-    readonly property BluetoothAdapter adapter: Bluetooth.defaultAdapter // qmllint disable unresolved-type
+    readonly property BluetoothAdapter adapter: BtAdapter.adapter // qmllint disable unresolved-type
     readonly property bool btEnabled: adapter?.enabled ?? false
 
     title: qsTr("Connected devices")
@@ -45,7 +45,7 @@ PageBase {
             placeholderText: root.btEnabled ? qsTr("No saved devices") : qsTr("Bluetooth disabled")
 
             model: ScriptModel {
-                values: Bluetooth.devices.values.filter(d => d.bonded).sort((a, b) => (b.connected - a.connected) || a.name.localeCompare(b.name)) // qmllint disable unresolved-type
+                values: BtAdapter.devices.filter(d => d.bonded).sort((a, b) => (b.connected - a.connected) || a.name.localeCompare(b.name)) // qmllint disable unresolved-type
             }
 
             delegate: StyledRect {
@@ -207,6 +207,38 @@ PageBase {
 
             Behavior on opacity {
                 Anim {}
+            }
+        }
+
+        SelectRow {
+            id: adapterSelect
+
+            Layout.topMargin: Tokens.spacing.large - parent.spacing
+
+            visible: BtAdapter.adapters.length > 1
+            first: true
+            last: true
+            menuOnTop: true
+            label: qsTr("Bluetooth adapter")
+            subtext: qsTr("Which adapter to use when there are several")
+            menuItems: adapterOptions.instances
+            active: menuItems.find(i => i.adapterId === root.adapter?.adapterId) ?? null
+            fallbackText: root.adapter?.name ?? ""
+            fallbackIcon: "bluetooth"
+            onSelected: item => GlobalConfig.services.bluetoothAdapter = item.adapterId
+
+            Variants {
+                id: adapterOptions
+
+                model: BtAdapter.adapters
+
+                MenuItem {
+                    required property var modelData
+                    readonly property string adapterId: modelData.adapterId
+
+                    icon: "bluetooth"
+                    text: `${modelData.name} (${modelData.adapterId})`
+                }
             }
         }
     }

@@ -17,6 +17,8 @@ class ServiceConfig : public settings::ObjectNode {
     CONFIG_NODE(ServiceConfig, settings::ObjectNode)
 
     CONFIG_GLOBAL_PROPERTY(QString, weatherLocation, QString())
+    // Which Bluetooth adapter the shell uses (its id, e.g. "hci0"). Empty or unknown: the system default
+    CONFIG_GLOBAL_PROPERTY(QString, bluetoothAdapter, QString())
     // Guess based on locale
     CONFIG_GLOBAL_PROPERTY(bool, useFahrenheit,
         QLocale().measurementSystem() == QLocale::ImperialUSSystem ||

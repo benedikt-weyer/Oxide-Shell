@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Bluetooth
 import Caelestia.Config
 import qs.components
+import qs.services
 import qs.utils
 
 Item {
@@ -31,9 +32,9 @@ Item {
         MaterialIcon {
             animate: true
             text: {
-                if (!Bluetooth.defaultAdapter?.enabled) // qmllint disable unresolved-type
+                if (!BtAdapter.adapter?.enabled) // qmllint disable unresolved-type
                     return "bluetooth_disabled";
-                if (Bluetooth.devices.values.some(d => d.connected)) // qmllint disable unresolved-type
+                if (BtAdapter.devices.some(d => d.connected)) // qmllint disable unresolved-type
                     return "bluetooth_connected";
                 return "bluetooth";
             }
@@ -43,7 +44,7 @@ Item {
         // Connected bluetooth devices
         Repeater {
             model: ScriptModel {
-                values: Bluetooth.devices.values.filter(d => d.state !== BluetoothDeviceState.Disconnected) // qmllint disable unresolved-type
+                values: BtAdapter.devices.filter(d => d.state !== BluetoothDeviceState.Disconnected) // qmllint disable unresolved-type
             }
 
             MaterialIcon {
