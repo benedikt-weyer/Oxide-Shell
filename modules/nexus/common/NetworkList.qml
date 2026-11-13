@@ -61,7 +61,12 @@ ItemList {
 
         onClicked: {
             if (!modelData.active) {
-                NetworkConnection.handleConnect(modelData);
+                NetworkConnection.handleConnect(modelData, null, ap => {
+                    // Needs a password: ask for it on its own page
+                    network.currentSelected = false;
+                    root.nState.selectedNetworkSsid = ap.ssid;
+                    root.nState.openSubPage(7); // Network password sub-page
+                });
                 currentSelected = true;
                 root.networkSelected(modelData);
             } else {
