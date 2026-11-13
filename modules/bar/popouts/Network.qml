@@ -15,18 +15,46 @@ ColumnLayout {
     required property PopoutState popouts
 
     property string connectingToSsid: ""
-    property string view: "wireless" // "wireless" or "ethernet"
+    // "" follows the active connection (ethernet while one is up), otherwise
+    // the view picked with the switch below
+    property string chosenView
+
+    readonly property string view: Nmcli.hasAvailableEthernet && chosenView ? chosenView : (Nmcli.activeEthernet ? "ethernet" : "wireless") // "wireless" or "ethernet"
     property var passwordNetwork: null
     property bool showPasswordDialog: false
 
     spacing: Tokens.spacing.small
     width: Tokens.sizes.bar.networkWidth
 
+    // Switch between the wireless and ethernet sections
+    RowLayout {
+        visible: Nmcli.hasAvailableEthernet
+        Layout.preferredHeight: visible ? implicitHeight : 0
+        Layout.topMargin: visible ? Tokens.padding.medium : 0
+        Layout.fillWidth: true
+        Layout.rightMargin: Tokens.padding.extraSmall
+        spacing: Tokens.spacing.small
+
+        TextButton {
+            Layout.fillWidth: true
+            type: root.view === "wireless" ? TextButton.Filled : TextButton.Tonal
+            text: qsTr("Wireless")
+            onClicked: root.chosenView = "wireless"
+        }
+
+        TextButton {
+            Layout.fillWidth: true
+            type: root.view === "ethernet" ? TextButton.Filled : TextButton.Tonal
+            text: qsTr("Ethernet")
+            onClicked: root.chosenView = "ethernet"
+        }
+    }
+
     // Wireless section
     StyledText {
         visible: root.view === "wireless"
         Layout.preferredHeight: visible ? implicitHeight : 0
-        Layout.topMargin: visible ? Tokens.padding.medium : 0
+        Layout.topMargin: visible ? (Nmcli.hasAvailableEthernet ? Tokens.spacing.small : Tokens.padding.medium) : 0
         Layout.rightMargin: Tokens.padding.extraSmall
         text: qsTr("Wireless")
         font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
@@ -224,7 +252,7 @@ ColumnLayout {
     StyledText {
         visible: root.view === "ethernet"
         Layout.preferredHeight: visible ? implicitHeight : 0
-        Layout.topMargin: visible ? Tokens.padding.medium : 0
+        Layout.topMargin: visible ? (Nmcli.hasAvailableEthernet ? Tokens.spacing.small : Tokens.padding.medium) : 0
         Layout.rightMargin: Tokens.padding.extraSmall
         text: qsTr("Ethernet")
         font: Tokens.font.body.builders.medium.weight(Font.Medium).build()
