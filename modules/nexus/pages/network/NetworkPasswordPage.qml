@@ -79,18 +79,18 @@ PageBase {
             root.finish();
     }
 
-    Timer {
-        id: timeout
-
-        interval: 45000
-        onTriggered: root.fail()
-    }
-
     ColumnLayout {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         width: root.cappedWidth
         spacing: Tokens.spacing.large
+
+        Timer {
+            id: timeout
+
+            interval: 45000
+            onTriggered: root.fail()
+        }
 
         StyledText {
             Layout.fillWidth: true
